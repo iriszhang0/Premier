@@ -7,27 +7,34 @@ library(haven)
 
 files <- list.files()
 dta_files <- files[grep("\\.dta$", files)]
-for (f in dta_files){
+for (f in dta_files){ #dta_files
   if (stringr::str_detect(f, "nyu_allyears")){
     print("This file is the merged all years file")
+  } else if(stringr::str_detect(f, "wide")) {
+    print("This file is a previously widened file")
   } else {
     #print("loading file:", f)
     print(f)
     temp_file <- haven::read_dta(f)
     print("selecting columns")
-    temp_file2 <- select(temp_file, pat_key, icd_code)
+    temp_file2 <- select(temp_file, pat_key, icd_pri_sec, icd_code)
     
-    print("fixing diag stuff")
+    print("fixing diagnosis stuff")
     print(Sys.time())
     new_df <- temp_file2 %>%
+      mutate(icd_code = as.character(icd_code)) %>%
       group_by(pat_key) %>%
-      mutate(all_diagnoses = toString(icd_code)) %>%
-      select(-icd_code) %>%
-      distinct()
+      mutate(diagnoses_all = toString(icd_code)) %>%
+      ungroup() %>%
+      pivot_wider(names_from = icd_pri_sec,
+                  values_from = icd_code, values_fn = toString) %>%
+      rename(diagnoses_admit = A, diagnoses_primary = P, diagnoses_secondary = S) 
     
     print("writing new file")
-    file_name <- stringr::str_c("wide_", f)
-    haven::write_dta(data = new_df, path = file_name)
+  
+    file_name <- stringr::str_c(stringr::str_c("wide_", stringr::str_split(f, "\\.")[[1]][1]), ".csv")
+    #haven::write_dta(data = new_df, path = file_name)
+    readr::write_csv(new_df, file_name)
     print(Sys.time())
   }
   
@@ -45,7 +52,7 @@ library(haven)
 
 files <- list.files()
 dta_files <- files[grep("\\.dta$", files)]
-for (f in dta_files){
+for (f in dta_files){ #
   if (stringr::str_detect(f, "nyu_allyears")){
     print("This file is the merged all years file")
   } else {
