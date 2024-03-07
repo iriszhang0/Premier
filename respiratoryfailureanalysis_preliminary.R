@@ -47,8 +47,32 @@ merged_data <- merged_data %>%
 ARDS_data <- merged_data %>%
   filter(ARDS == 1)
 
-#create death at discharge variable
+#create death (anytime) variable
 ARDS_data$death <- ifelse(ARDS_data$disc_status %in% c(20, 40, 41, 42), 1, 0)
+
+#create in-hospital mortality
+ARDS_data$inhospital_death <- ifelse(ARDS_data$disc_status == 20, 1, 0)
+
+#create outcome multinomial from disc_status
+# (hospice = 40, 41, 42, 50, 51 death or not*is it okay if we are mixing expired or not),
+# (interhospital = 2, 43, 66, 70)
+# (transitional care = 61, 71 + 72 (outpatient), )
+# (long term care = 3, 4 (intermediate care), 62, 63, 64)
+# (home, no indication of hospice =  1, 6 (home health org), 8 (home IV provider))
+# (other )
+# what does "planned hospital readmission" mean? planned hospital readmission = c(81 - 95)
+ARDS_data$outcome
+
+# BMI as covariate
+# --> see Katie's Z Codes table with BMI, try to re-create standard BMI categories
+# and see what the sample size is
+ARDS_data$BMI
+
+# obesity diagnosis codes BMI > 30
+# Z code of str_detect "Z68.3" OR
+# diagnosis of obesity "E66.0", "E66.1" "E66.2" "E66.8" "E66.9"
+ARDS_data$obesity
+
 
 # sample size ----------------
 
