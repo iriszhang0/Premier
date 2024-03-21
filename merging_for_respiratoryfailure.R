@@ -36,7 +36,7 @@ for (f in dta_files){
   }
 }  
 
-save(data, file = "nyu_allyears_pri_sec_diagnosis.RData")
+save(data, file = "nyu_allyears_diagnosis.RData")
 
 
 
