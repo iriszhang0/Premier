@@ -16,14 +16,14 @@ print("diagnosis:")
 
 
 files <- list.files()
-dta_files <- files[grep("\\.dta$", files)]
+dta_files <- files[grep("\\.csv$", files)] #only csv files have been properly widened by primary/secondary diagnosis
 
 init <- 1
 
 for (f in dta_files){
   if (stringr::str_detect(f, "wide_")){
     print(f)
-    temp <- read_dta(f)
+    temp <- readr::read_csv(f)
     
     
     if (init == 1) { #first file
@@ -36,7 +36,7 @@ for (f in dta_files){
   }
 }  
 
-save(data, file = "nyu_allyears_diagnosis.RData")
+save(data, file = "nyu_allyears_pri_sec_diagnosis.RData")
 
 
 
