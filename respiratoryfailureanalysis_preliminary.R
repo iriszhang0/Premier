@@ -1,11 +1,12 @@
 # load and merge data ----------------------
 
 setwd("/scratch/Premier/Raw_Data")
-#one comment
+
 
 library(haven)
 library(dplyr)
 library(tidyr)
+library(lme4) 
 
 print("loading .... demo")
 print(Sys.time())
@@ -63,6 +64,10 @@ merged_data <- merged_data %>%
     race == "A" & hispanic_ind != "Y" ~ "Asian",
     race == "U" ~ "Unknown",
     .default = "Other"))
+merged_data$race_ethnicity <- factor(merged_data$race_ethnicity,
+                  levels = c("nonHispanic_White", "nonHispanic_Black",
+                             "Hispanic_Black", "Hispanic", "Asian",  "Unknown",
+                             "Other"))
 
 #create outcome multinomial from disc_status
 # (hospice = 40, 41, 42, 50, 51 death or not*is it okay if we are mixing expired or not), *separate death from hospice* 
@@ -88,6 +93,7 @@ merged_data <- merged_data %>%
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
 # insurance type
+print("creating insurance variable")
 merged_data <- merged_data %>%
   mutate(insurance = case_when(std_payor %in% c(300, 310, 320) ~ "medicare",
                                std_payor %in% c(330, 340, 350) ~ "medicaid",
@@ -155,18 +161,17 @@ table(ARDS_data$insurance)/length(ARDS_data$pat_key) #proportion
 
 
 # Bivariate association Table 2a --------------------
-chisq.test(ARDS_data$death, ARDS_data$race) #death
-chisq.test(ARDS_data$hispanic_ind, ARDS_data$race) #ethnicity
-chisq.test(ARDS_data$gender, ARDS_data$race) #gender
-chisq.test(ARDS_data$obesity, ARDS_data$race) #obesity
+chisq.test(ARDS_data$death, ARDS_data$race_ethnicity) #death
+chisq.test(ARDS_data$gender, ARDS_data$race_ethnicity) #gender
+chisq.test(ARDS_data$obesity, ARDS_data$race_ethnicity) #obesity
 
-chisq.test(ARDS_data$insurance, ARDS_data$race) #insurance type
+chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
 
 
 
 
 # Bivariate association Table 2b -----------------
-chisq.test(ARDS_data$race, ARDS_data$death) #race
+chisq.test(ARDS_data$race_ethnicity, ARDS_data$death) #race
 chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
 chisq.test(ARDS_data$gender, ARDS_data$death) #gender
 chisq.test(ARDS_data$obesity, ARDS_data$death) #obesity
@@ -185,20 +190,30 @@ t.test(filter(ARDS_data, death == 1)$age, filter(ARDS_data, death == 0)$age) #ag
 
 
 library(lme4) 
-#unadjusted
-m0 <- glmer(death ~ race_ethnicity | prov_id, data = ARDS_data, family = binomial)
+## null --------------
+m_null <- glmer(death ~ 1 + (1 | prov_id),
+                data = ARDS_data, family = binomial)
+summary(m_null)
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+
+## unadjusted -------------------
+print(Sys.time())
+m0 <- glmer(death ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 4 mins to run
 summary(m0)
 
 #adjusted
-m1 <- glmer(death ~ race + age + gender | prov_id, data = ARDS_data, family = binomial)
+print(Sys.time())
+m1 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m1)
 
 
 
-#split by covid year
-ARDS_pre <- filter(ARDS_data, )
-ARDS_post <- 
-
-m2_pre <- glmer(death ~ race + age + gender | prov_id, data = ARDS_pre, family = binomial)
-m2_post <- glmer(death ~ race + age + gender | prov_id, data = ARDS_post, family = binomial)
 
 
