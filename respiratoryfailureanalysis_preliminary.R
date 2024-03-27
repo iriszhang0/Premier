@@ -57,7 +57,6 @@ merged_data$inhospital_death <- ifelse(merged_data$disc_status == 20, 1, 0)
 #merge race and hispanicity
 merged_data <- merged_data %>%
   mutate(race_ethnicity = case_when(
-    race == "B" & hispanic_ind == "Y" ~ "Hispanic_Black",
     hispanic_ind == "Y" ~ "Hispanic", 
     race == "B" & hispanic_ind != "Y" ~ "nonHispanic_Black",
     race == "W" & hispanic_ind != "Y" ~ "nonHispanic_White",
@@ -66,7 +65,7 @@ merged_data <- merged_data %>%
     .default = "Other"))
 merged_data$race_ethnicity <- factor(merged_data$race_ethnicity,
                   levels = c("nonHispanic_White", "nonHispanic_Black",
-                             "Hispanic_Black", "Hispanic", "Asian",  "Unknown",
+                              "Hispanic", "Asian",  "Unknown",
                              "Other"))
 
 #create outcome multinomial from disc_status
@@ -100,14 +99,24 @@ merged_data <- merged_data %>%
                                std_payor %in% c(360, 370, 380) ~ "private",
                                .default = "other"))
 
-
-
-
-
+merged_data$insurance <- factor(merged_data$insurance, 
+                                levels = c("private", "medicaid", "medicare",
+                                           "other"))
 
 # filter to just ARDS (J80) patients ----------------
 ARDS_data <- merged_data %>%
   filter(ARDS == 1)
+
+# drop "unknown" as missing ----------------
+
+
+ARDS_data <- ARDS_data %>%
+  filter(gender != "U", #dropped 47 observations
+         race_ethnicity != "Unknown") 
+
+
+
+
 
 
 
@@ -172,7 +181,7 @@ chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
 
 # Bivariate association Table 2b -----------------
 chisq.test(ARDS_data$race_ethnicity, ARDS_data$death) #race
-chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
+#chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
 chisq.test(ARDS_data$gender, ARDS_data$death) #gender
 chisq.test(ARDS_data$obesity, ARDS_data$death) #obesity
 
@@ -195,6 +204,15 @@ m_null <- glmer(death ~ 1 + (1 | prov_id),
                 data = ARDS_data, family = binomial)
 summary(m_null)
 
+se_null <- sqrt(diag(vcov(m_null)))
+# table of estimates with 95% CI
+tab_null <- cbind(Est = fixef(m_null), 
+                  LL = fixef(m_null) - 1.96 * se_null,
+                  UL = fixef(m_null) + 1.96 * se_null)
+exp(tab_null)
+
+
+
 # ICC
 # The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
 
@@ -205,15 +223,28 @@ m0 <- glmer(death ~ race_ethnicity + (1 | prov_id),
             data = ARDS_data, family = binomial)
 print(Sys.time()) #approx 4 mins to run
 summary(m0)
+se_0 <- sqrt(diag(vcov(m0)))
+# table of estimates with 95% CI
+tab_0 <- cbind(Est = fixef(m0), 
+                  LL = fixef(m0) - 1.96 * se_0,
+                  UL = fixef(m0) + 1.96 * se_0)
+exp(tab_0)
 
-#adjusted
+
+
+#adjusted ---------------------------
 print(Sys.time())
 m1 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data, family = binomial)
 print(Sys.time()) #approx 8 mins to run
 summary(m1)
 
-
+se_1 <- sqrt(diag(vcov(m1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(m1), 
+               LL = fixef(m1) - 1.96 * se_1,
+               UL = fixef(m1) + 1.96 * se_1)
+exp(tab_1)
 
 
 
