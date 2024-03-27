@@ -167,6 +167,9 @@ table(ARDS_data$insurance)
 table(ARDS_data$insurance)/length(ARDS_data$pat_key) #proportion
 
 
+#death by race/ethnicity
+table(ARDS_data$death, ARDS_data$race_ethnicity)
+
 
 
 # Bivariate association Table 2a --------------------
@@ -215,6 +218,12 @@ exp(tab_null)
 
 # ICC
 # The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(m_null),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
 
 
 ## unadjusted -------------------
