@@ -241,7 +241,7 @@ exp(tab_0)
 
 
 
-#adjusted ---------------------------
+## adjusted ---------------------------
 print(Sys.time())
 m1 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data, family = binomial)
@@ -256,4 +256,66 @@ tab_1 <- cbind(Est = fixef(m1),
 exp(tab_1)
 
 
+# Models by Covid period ----------------
+
+#dates
+unique(ARDS_data$adm_mon)
+
+# pre-covid
+pre_covid <- c(2017101, 2016412, 2016411, 2017102, 2016308, 2016410,
+               2017103, 2017204, 2017205, 2017206, 2017307, 2017308,
+               2017309, 2013309, 2017410, 2017411, 2017412, 2018101,
+               2018102, 2018103, 2018204, 2018205, 2018206, 2018307,
+               2018308, 2018309, 2018410, 2018411, 2018412, 2019101,
+               2019102, 2019103, 2019204, 2019205, 2019206, 2019307,
+               2019308, 2019309, 2019410, 2019411, 2019412, 2020101,
+               2020102) #up to Feb 2020
+
+covid <- c(2020103, 2020204, 2020205, 2020206, 2020307, 2020308, 
+           2020309, 2020410, 2020411, 2020412, 2021103, 2021204,
+           2021102, 2021101, 2021205, 2021206, 2021307, 2021308,
+           2021309)
+
+# split ARDS into two dataset
+ARDS_precovid <- ARDS_data %>%
+  filter(adm_mon %in% pre_covid)
+
+ARDS_covid <- ARDS_data %>%
+  filter(adm_mon %in% covid)
+
+
+# sample size
+dim(ARDS_precovid)
+dim(ARDS_covid)
+
+## multivariate models -----------
+
+## pre covid
+print(Sys.time())
+m_precovid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_precovid) #2 mins
+
+se_precovid <- sqrt(diag(vcov(m_precovid)))
+# table of estimates with 95% CI
+tab_precovid <- cbind(Est = fixef(m_precovid), 
+               LL = fixef(m_precovid) - 1.96 * se_precovid,
+               UL = fixef(m_precovid) + 1.96 * se_precovid)
+exp(tab_precovid)
+
+
+## covid
+print(Sys.time())
+m_covid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+                    data = ARDS_covid, family = binomial)
+print(Sys.time()) #3 mins
+summary(m_covid)
+
+se_covid <- sqrt(diag(vcov(m_covid)))
+# table of estimates with 95% CI
+tab_covid <- cbind(Est = fixef(m_covid), 
+                      LL = fixef(m_covid) - 1.96 * se_covid,
+                      UL = fixef(m_covid) + 1.96 * se_covid)
+exp(tab_covid)
 
