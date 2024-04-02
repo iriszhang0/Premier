@@ -117,7 +117,7 @@ ARDS_data <- merged_data %>%
 
 
 ARDS_data <- ARDS_data %>%
-  filter(gender != "U", #dropped 47 observations
+  filter(gender != "U" & #dropped 47 observations
          race_ethnicity != "Unknown") 
 
 
@@ -358,7 +358,7 @@ ARDS_covid <- ARDS_data %>%
 dim(ARDS_precovid)
 dim(ARDS_covid)
 
-## multivariate models -----------
+## multivariate models, death -----------
 
 ## pre covid
 print(Sys.time())
@@ -389,6 +389,8 @@ tab_covid <- cbind(Est = fixef(m_covid),
                       UL = fixef(m_covid) + 1.96 * se_covid)
 exp(tab_covid)
 
+## multivariate models, death or hospice -----------
+
 ## pre-covid, death OR hospice
 print(Sys.time())
 m2_precovid <- glmer(death_or_hospice ~ race_ethnicity + age + gender +
@@ -402,7 +404,7 @@ se2_precovid <- sqrt(diag(vcov(m2_precovid)))
 tab2_precovid <- cbind(Est = fixef(m2_precovid), 
                       LL = fixef(m2_precovid) - 1.96 * se2_precovid,
                       UL = fixef(m2_precovid) + 1.96 * se2_precovid)
-exp(tab2_precovid)
+round(exp(tab2_precovid),3)
 
 
 ## covid, death OR hospice
@@ -418,5 +420,5 @@ se2_covid <- sqrt(diag(vcov(m2_covid)))
 tab2_covid <- cbind(Est = fixef(m2_covid), 
                    LL = fixef(m2_covid) - 1.96 * se2_covid,
                    UL = fixef(m2_covid) + 1.96 * se2_covid)
-exp(tab2_covid)
+round(exp(tab2_covid),3)
 
