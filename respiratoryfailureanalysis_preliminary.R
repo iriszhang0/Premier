@@ -271,9 +271,7 @@ ARDS_data_hosp10 <- ARDS_data[ARDS_data$hospital.patient.count > 10, ]
 m_null_hosp10 <- glmer(death ~ 1 + (1 | prov_id),
                 data = ARDS_data_hosp10, family = binomial)
 summary(m_null_hosp10)
-
 se_null_hosp10 <- sqrt(diag(vcov(m_null_hosp10)))
-# table of estimates with 95% CI
 tab_null_hosp10 <- cbind(Est = fixef(m_null_hosp10), 
                   LL = fixef(m_null_hosp10) - 1.96 * se_null_hosp10,
                   UL = fixef(m_null_hosp10) + 1.96 * se_null_hosp10)
@@ -286,10 +284,9 @@ icc_hand
 print(Sys.time())
 m0_hosp10 <- glmer(death ~ race_ethnicity + (1 | prov_id), 
             data = ARDS_data_hosp10, family = binomial)
-print(Sys.time()) #approx 4 mins to run
+print(Sys.time()) 
 summary(m0_hosp10)
 se_0_hosp10 <- sqrt(diag(vcov(m0_hosp10)))
-# table of estimates with 95% CI
 tab_0_hosp10 <- cbind(Est = fixef(m0_hosp10), 
                LL = fixef(m0_hosp10) - 1.96 * se_0_hosp10,
                UL = fixef(m0_hosp10) + 1.96 * se_0_hosp10)
@@ -300,16 +297,68 @@ performance::icc(m0_hosp10)
 print(Sys.time())
 m1_hosp10 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data_hosp10, family = binomial)
-print(Sys.time()) #approx 8 mins to run
+print(Sys.time()) 
 summary(m1_hosp10)
 
 se_1_hosp10 <- sqrt(diag(vcov(m1_hosp10)))
-# table of estimates with 95% CI
 tab_1_hosp10 <- cbind(Est = fixef(m1_hosp10), 
                LL = fixef(m1_hosp10) - 1.96 * se_1_hosp10,
                UL = fixef(m1_hosp10) + 1.96 * se_1_hosp10)
 exp(tab_1_hosp10)
 performance::icc(m1_hosp10)
+
+
+
+# Models restricted for hospitals with at least one patient identified as Asian ----------------
+asian_count <- ARDS_data %>%
+  filter(race_ethnicity == "Asian") %>%
+  pull(prov_id) %>%
+  unique()
+
+ARDS_data_Aisan <- ARDS_data %>%
+  filter(prov_id %in% asian_count)
+
+
+## null model 
+m_null_Aisan <- glmer(death ~ 1 + (1 | prov_id),
+                       data = ARDS_data_Aisan, family = binomial)
+summary(m_null_Aisan)
+se_null_Aisan <- sqrt(diag(vcov(m_null_Aisan)))
+tab_null_Aisan <- cbind(Est = fixef(m_null_Aisan), 
+                         LL = fixef(m_null_Aisan) - 1.96 * se_null_Aisan,
+                         UL = fixef(m_null_Aisan) + 1.96 * se_null_Aisan)
+exp(tab_null_Aisan)
+sigma2_0 <- as.data.frame(VarCorr(m_null_Aisan),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+## unadjusted 
+print(Sys.time())
+m0_Aisan <- glmer(death ~ race_ethnicity + (1 | prov_id), 
+                   data = ARDS_data_Aisan, family = binomial)
+print(Sys.time()) 
+summary(m0_Aisan)
+se_0_Aisan  <- sqrt(diag(vcov(m0_Aisan)))
+tab_0_Aisan <- cbind(Est = fixef(m0_Aisan), 
+                      LL = fixef(m0_Aisan) - 1.96 * se_0_Aisan,
+                      UL = fixef(m0_Aisan) + 1.96 * se_0_Aisan)
+exp(tab_0_Aisan)
+performance::icc(m0_Aisan)
+
+## adjusted ---------------------------
+print(Sys.time())
+m1_Aisan <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+                   data = ARDS_data_Aisan, family = binomial)
+print(Sys.time()) 
+summary(m1_Aisan)
+
+se_1_Aisan <- sqrt(diag(vcov(m1_Aisan)))
+tab_1_Aisan <- cbind(Est = fixef(m1_Aisan), 
+                      LL = fixef(m1_Aisan) - 1.96 * se_1_Aisan,
+                      UL = fixef(m1_Aisan) + 1.96 * se_1_Aisan)
+exp(tab_1_Aisan)
+performance::icc(m1_Aisan)
+
 
 
 # Odds of death or hospice transfer -----------------------
