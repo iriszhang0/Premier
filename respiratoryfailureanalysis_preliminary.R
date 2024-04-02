@@ -7,6 +7,8 @@ library(haven)
 library(dplyr)
 library(tidyr)
 library(lme4) 
+library(performance)
+
 
 print("loading .... demo")
 print(Sys.time())
@@ -239,6 +241,7 @@ tab_0 <- cbind(Est = fixef(m0),
                   UL = fixef(m0) + 1.96 * se_0)
 exp(tab_0)
 
+performance::icc(m1)
 
 
 ## adjusted ---------------------------
@@ -254,6 +257,9 @@ tab_1 <- cbind(Est = fixef(m1),
                LL = fixef(m1) - 1.96 * se_1,
                UL = fixef(m1) + 1.96 * se_1)
 exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(m1)
 
 
 # Models by Covid period ----------------
