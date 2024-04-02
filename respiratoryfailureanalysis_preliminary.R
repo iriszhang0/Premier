@@ -241,6 +241,7 @@ tab_0 <- cbind(Est = fixef(m0),
                   UL = fixef(m0) + 1.96 * se_0)
 exp(tab_0)
 
+performance::icc(m1)
 
 
 ## adjusted ---------------------------
