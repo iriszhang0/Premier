@@ -1,11 +1,12 @@
 # load and merge data ----------------------
 
 setwd("/scratch/Premier/Raw_Data")
-#one comment
+
 
 library(haven)
 library(dplyr)
 library(tidyr)
+library(lme4) 
 
 print("loading .... demo")
 print(Sys.time())
@@ -56,13 +57,16 @@ merged_data$inhospital_death <- ifelse(merged_data$disc_status == 20, 1, 0)
 #merge race and hispanicity
 merged_data <- merged_data %>%
   mutate(race_ethnicity = case_when(
-    race == "B" & hispanic_ind == "Y" ~ "Hispanic_Black",
     hispanic_ind == "Y" ~ "Hispanic", 
     race == "B" & hispanic_ind != "Y" ~ "nonHispanic_Black",
     race == "W" & hispanic_ind != "Y" ~ "nonHispanic_White",
     race == "A" & hispanic_ind != "Y" ~ "Asian",
     race == "U" ~ "Unknown",
     .default = "Other"))
+merged_data$race_ethnicity <- factor(merged_data$race_ethnicity,
+                  levels = c("nonHispanic_White", "nonHispanic_Black",
+                              "Hispanic", "Asian",  "Unknown",
+                             "Other"))
 
 #create outcome multinomial from disc_status
 # (hospice = 40, 41, 42, 50, 51 death or not*is it okay if we are mixing expired or not), *separate death from hospice* 
@@ -88,20 +92,31 @@ merged_data <- merged_data %>%
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
 # insurance type
+print("creating insurance variable")
 merged_data <- merged_data %>%
   mutate(insurance = case_when(std_payor %in% c(300, 310, 320) ~ "medicare",
                                std_payor %in% c(330, 340, 350) ~ "medicaid",
                                std_payor %in% c(360, 370, 380) ~ "private",
                                .default = "other"))
 
-
-
-
-
+merged_data$insurance <- factor(merged_data$insurance, 
+                                levels = c("private", "medicaid", "medicare",
+                                           "other"))
 
 # filter to just ARDS (J80) patients ----------------
 ARDS_data <- merged_data %>%
   filter(ARDS == 1)
+
+# drop "unknown" as missing ----------------
+
+
+ARDS_data <- ARDS_data %>%
+  filter(gender != "U", #dropped 47 observations
+         race_ethnicity != "Unknown") 
+
+
+
+
 
 
 
@@ -152,22 +167,24 @@ table(ARDS_data$insurance)
 table(ARDS_data$insurance)/length(ARDS_data$pat_key) #proportion
 
 
+#death by race/ethnicity
+table(ARDS_data$death, ARDS_data$race_ethnicity)
+
 
 
 # Bivariate association Table 2a --------------------
-chisq.test(ARDS_data$death, ARDS_data$race) #death
-chisq.test(ARDS_data$hispanic_ind, ARDS_data$race) #ethnicity
-chisq.test(ARDS_data$gender, ARDS_data$race) #gender
-chisq.test(ARDS_data$obesity, ARDS_data$race) #obesity
+chisq.test(ARDS_data$death, ARDS_data$race_ethnicity) #death
+chisq.test(ARDS_data$gender, ARDS_data$race_ethnicity) #gender
+chisq.test(ARDS_data$obesity, ARDS_data$race_ethnicity) #obesity
 
-chisq.test(ARDS_data$insurance, ARDS_data$race) #insurance type
+chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
 
 
 
 
 # Bivariate association Table 2b -----------------
-chisq.test(ARDS_data$race, ARDS_data$death) #race
-chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
+chisq.test(ARDS_data$race_ethnicity, ARDS_data$death) #race
+#chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
 chisq.test(ARDS_data$gender, ARDS_data$death) #gender
 chisq.test(ARDS_data$obesity, ARDS_data$death) #obesity
 
@@ -185,20 +202,120 @@ t.test(filter(ARDS_data, death == 1)$age, filter(ARDS_data, death == 0)$age) #ag
 
 
 library(lme4) 
-#unadjusted
-m0 <- glmer(death ~ race_ethnicity | prov_id, data = ARDS_data, family = binomial)
+## null --------------
+m_null <- glmer(death ~ 1 + (1 | prov_id),
+                data = ARDS_data, family = binomial)
+summary(m_null)
+
+se_null <- sqrt(diag(vcov(m_null)))
+# table of estimates with 95% CI
+tab_null <- cbind(Est = fixef(m_null), 
+                  LL = fixef(m_null) - 1.96 * se_null,
+                  UL = fixef(m_null) + 1.96 * se_null)
+exp(tab_null)
+
+
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(m_null),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+
+
+## unadjusted -------------------
+print(Sys.time())
+m0 <- glmer(death ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 4 mins to run
 summary(m0)
+se_0 <- sqrt(diag(vcov(m0)))
+# table of estimates with 95% CI
+tab_0 <- cbind(Est = fixef(m0), 
+                  LL = fixef(m0) - 1.96 * se_0,
+                  UL = fixef(m0) + 1.96 * se_0)
+exp(tab_0)
 
-#adjusted
-m1 <- glmer(death ~ race + age + gender | prov_id, data = ARDS_data, family = binomial)
 
 
+## adjusted ---------------------------
+print(Sys.time())
+m1 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m1)
 
-#split by covid year
-ARDS_pre <- filter(ARDS_data, )
-ARDS_post <- 
+se_1 <- sqrt(diag(vcov(m1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(m1), 
+               LL = fixef(m1) - 1.96 * se_1,
+               UL = fixef(m1) + 1.96 * se_1)
+exp(tab_1)
 
-m2_pre <- glmer(death ~ race + age + gender | prov_id, data = ARDS_pre, family = binomial)
-m2_post <- glmer(death ~ race + age + gender | prov_id, data = ARDS_post, family = binomial)
 
+# Models by Covid period ----------------
+
+#dates
+unique(ARDS_data$adm_mon)
+
+# pre-covid
+pre_covid <- c(2017101, 2016412, 2016411, 2017102, 2016308, 2016410,
+               2017103, 2017204, 2017205, 2017206, 2017307, 2017308,
+               2017309, 2013309, 2017410, 2017411, 2017412, 2018101,
+               2018102, 2018103, 2018204, 2018205, 2018206, 2018307,
+               2018308, 2018309, 2018410, 2018411, 2018412, 2019101,
+               2019102, 2019103, 2019204, 2019205, 2019206, 2019307,
+               2019308, 2019309, 2019410, 2019411, 2019412, 2020101,
+               2020102) #up to Feb 2020
+
+covid <- c(2020103, 2020204, 2020205, 2020206, 2020307, 2020308, 
+           2020309, 2020410, 2020411, 2020412, 2021103, 2021204,
+           2021102, 2021101, 2021205, 2021206, 2021307, 2021308,
+           2021309)
+
+# split ARDS into two dataset
+ARDS_precovid <- ARDS_data %>%
+  filter(adm_mon %in% pre_covid)
+
+ARDS_covid <- ARDS_data %>%
+  filter(adm_mon %in% covid)
+
+
+# sample size
+dim(ARDS_precovid)
+dim(ARDS_covid)
+
+## multivariate models -----------
+
+## pre covid
+print(Sys.time())
+m_precovid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_precovid) #2 mins
+
+se_precovid <- sqrt(diag(vcov(m_precovid)))
+# table of estimates with 95% CI
+tab_precovid <- cbind(Est = fixef(m_precovid), 
+               LL = fixef(m_precovid) - 1.96 * se_precovid,
+               UL = fixef(m_precovid) + 1.96 * se_precovid)
+exp(tab_precovid)
+
+
+## covid
+print(Sys.time())
+m_covid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+                    data = ARDS_covid, family = binomial)
+print(Sys.time()) #3 mins
+summary(m_covid)
+
+se_covid <- sqrt(diag(vcov(m_covid)))
+# table of estimates with 95% CI
+tab_covid <- cbind(Est = fixef(m_covid), 
+                      LL = fixef(m_covid) - 1.96 * se_covid,
+                      UL = fixef(m_covid) + 1.96 * se_covid)
+exp(tab_covid)
 
