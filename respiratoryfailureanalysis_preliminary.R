@@ -389,3 +389,34 @@ tab_covid <- cbind(Est = fixef(m_covid),
                       UL = fixef(m_covid) + 1.96 * se_covid)
 exp(tab_covid)
 
+## pre-covid, death OR hospice
+print(Sys.time())
+m2_precovid <- glmer(death_or_hospice ~ race_ethnicity + age + gender +
+                      insurance + obesity + (1 | prov_id), 
+                    data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m2_precovid) 
+
+se2_precovid <- sqrt(diag(vcov(m2_precovid)))
+# table of estimates with 95% CI
+tab2_precovid <- cbind(Est = fixef(m2_precovid), 
+                      LL = fixef(m2_precovid) - 1.96 * se2_precovid,
+                      UL = fixef(m2_precovid) + 1.96 * se2_precovid)
+exp(tab2_precovid)
+
+
+## covid, death OR hospice
+print(Sys.time())
+m2_covid <- glmer(death_or_hospice ~ race_ethnicity + age + gender +
+                    insurance + obesity + (1 | prov_id), 
+                 data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m2_covid)
+
+se2_covid <- sqrt(diag(vcov(m2_covid)))
+# table of estimates with 95% CI
+tab2_covid <- cbind(Est = fixef(m2_covid), 
+                   LL = fixef(m2_covid) - 1.96 * se2_covid,
+                   UL = fixef(m2_covid) + 1.96 * se2_covid)
+exp(tab2_covid)
+
