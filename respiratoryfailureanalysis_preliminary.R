@@ -1,5 +1,4 @@
 # load and merge data ----------------------
-#test change
 setwd("/scratch/Premier/Raw_Data")
 
 
@@ -51,6 +50,11 @@ merged_data <- merged_data %>%
 #create death (anytime) variable
 print("creating death variable")
 merged_data$death <- ifelse(merged_data$disc_status %in% c(20, 40, 41, 42), 1, 0)
+
+#creating death or hospice transfer
+print("creating death or hospice transfer variable")
+merged_data$death_or_hospice <- ifelse(merged_data$disc_status %in% 
+                                         c(20, 40, 41, 42, 50, 51), 1, 0)
 
 #create in-hospital mortality
 print("creating in-hospital mortality varibale")
@@ -260,6 +264,66 @@ exp(tab_1)
 
 # Add ICC for adjusted model
 performance::icc(m1)
+
+
+# Odds of death or hospice transfer -----------------------
+
+## null --------------
+m2_null <- glmer(death_or_hospice ~ 1 + (1 | prov_id),
+                data = ARDS_data, family = binomial)
+summary(m2_null)
+
+se2_null <- sqrt(diag(vcov(m2_null)))
+# table of estimates with 95% CI
+tab2_null <- cbind(Est = fixef(m2_null), 
+                  LL = fixef(m2_null) - 1.96 * se2_null,
+                  UL = fixef(m2_null) + 1.96 * se2_null)
+exp(tab2_null)
+
+
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(m2_null),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+
+
+## unadjusted -------------------
+print(Sys.time())
+m3 <- glmer(death_or_hospice ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 4 mins to run
+summary(m3)
+se_3 <- sqrt(diag(vcov(m3)))
+# table of estimates with 95% CI
+tab_3 <- cbind(Est = fixef(m3), 
+               LL = fixef(m3) - 1.96 * se_3,
+               UL = fixef(m3) + 1.96 * se_3)
+exp(tab_3)
+
+performance::icc(m3)
+
+
+## adjusted ---------------------------
+print(Sys.time())
+m4 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m4)
+
+se_4 <- sqrt(diag(vcov(m4)))
+# table of estimates with 95% CI
+tab_4 <- cbind(Est = fixef(m4), 
+               LL = fixef(m4) - 1.96 * se_4,
+               UL = fixef(m4) + 1.96 * se_4)
+exp(tab_4)
+
+# Add ICC for adjusted model
+performance::icc(m4)
 
 
 # Models by Covid period ----------------
