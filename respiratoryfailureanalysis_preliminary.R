@@ -292,7 +292,7 @@ dim(ARDS_covid)
 
 ## pre covid
 print(Sys.time())
-m_precovid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+m_precovid <- glmer(death ~ race_ethnicity + age + gender + insurance + obesity + (1 | prov_id), 
             data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
 summary(m_precovid) #2 mins
@@ -307,7 +307,7 @@ exp(tab_precovid)
 
 ## covid
 print(Sys.time())
-m_covid <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+m_covid <- glmer(death ~ race_ethnicity + age + gender + insurance + obesity + (1 | prov_id), 
                     data = ARDS_covid, family = binomial)
 print(Sys.time()) #3 mins
 summary(m_covid)
