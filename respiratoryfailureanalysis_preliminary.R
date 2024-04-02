@@ -205,8 +205,6 @@ t.test(filter(ARDS_data, death == 1)$age, filter(ARDS_data, death == 0)$age) #ag
 # Odds of in-hospital death -----------------------
 
 
-
-
 library(lme4) 
 ## null --------------
 m_null <- glmer(death ~ 1 + (1 | prov_id),
@@ -245,7 +243,7 @@ tab_0 <- cbind(Est = fixef(m0),
                   UL = fixef(m0) + 1.96 * se_0)
 exp(tab_0)
 
-performance::icc(m1)
+performance::icc(m0)
 
 
 ## adjusted ---------------------------
@@ -264,6 +262,54 @@ exp(tab_1)
 
 # Add ICC for adjusted model
 performance::icc(m1)
+
+# Models restricted for hospitals > 10 patients ----------------
+occurrences <- table(ARDS_data$prov_id)
+ARDS_data$hospital.patient.count <- occurrences[ARDS_data$prov_id]
+ARDS_data_hosp10 <- ARDS_data[ARDS_data$hospital.patient.count > 10, ]
+## null model 
+m_null_hosp10 <- glmer(death ~ 1 + (1 | prov_id),
+                data = ARDS_data_hosp10, family = binomial)
+summary(m_null_hosp10)
+
+se_null_hosp10 <- sqrt(diag(vcov(m_null_hosp10)))
+# table of estimates with 95% CI
+tab_null_hosp10 <- cbind(Est = fixef(m_null_hosp10), 
+                  LL = fixef(m_null_hosp10) - 1.96 * se_null_hosp10,
+                  UL = fixef(m_null_hosp10) + 1.96 * se_null_hosp10)
+exp(tab_null_hosp10)
+sigma2_0 <- as.data.frame(VarCorr(m_null_hosp10),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+## unadjusted 
+print(Sys.time())
+m0_hosp10 <- glmer(death ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_data_hosp10, family = binomial)
+print(Sys.time()) #approx 4 mins to run
+summary(m0_hosp10)
+se_0_hosp10 <- sqrt(diag(vcov(m0_hosp10)))
+# table of estimates with 95% CI
+tab_0_hosp10 <- cbind(Est = fixef(m0_hosp10), 
+               LL = fixef(m0_hosp10) - 1.96 * se_0_hosp10,
+               UL = fixef(m0_hosp10) + 1.96 * se_0_hosp10)
+exp(tab_0_hosp10)
+performance::icc(m0_hosp10)
+
+## adjusted ---------------------------
+print(Sys.time())
+m1_hosp10 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
+            data = ARDS_data_hosp10, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m1_hosp10)
+
+se_1_hosp10 <- sqrt(diag(vcov(m1_hosp10)))
+# table of estimates with 95% CI
+tab_1_hosp10 <- cbind(Est = fixef(m1_hosp10), 
+               LL = fixef(m1_hosp10) - 1.96 * se_1_hosp10,
+               UL = fixef(m1_hosp10) + 1.96 * se_1_hosp10)
+exp(tab_1_hosp10)
+performance::icc(m1_hosp10)
 
 
 # Odds of death or hospice transfer -----------------------
