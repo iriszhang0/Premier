@@ -36,6 +36,17 @@ print("merging")
 merged_data <- left_join(merged_data, all_aprdrg, by = "pat_key")
 print(Sys.time())
 
+print("loading ... region")
+setwd("/scratch/Premier/Raw_Data")
+print(Sys.time())
+region <- read.delim("nyu_providers.txt",sep = "|")
+print(Sys.time())
+
+print("merging")
+#colnames(region) <- tolower(colnames(region))
+merged_data <- merge(merged_data, region, by = "prov_id", all.x = TRUE)
+print(Sys.time())
+
 #create respiratory variables and covariates ------------
 
 print("creating ARDS")
@@ -108,6 +119,16 @@ merged_data <- merged_data %>%
 merged_data$insurance <- factor(merged_data$insurance, 
                                 levels = c("private", "medicaid", "medicare",
                                            "other"))
+
+
+# add region factor to the dataset -------------------------------------
+print("creating region variable for hosptials")
+#merge middle atlantic and new england
+merged_data[merged_data$prov_division == "MIDDLE ATLANTIC",]$prov_division <- "NEW ENGLAND"
+#merge mountain and WEST NORTH CENTRAL
+merged_data[merged_data$prov_division == "MOUNTAIN",]$prov_division <- "WEST NORTH CENTRAL"
+table(merged_data$prov_division)
+
 
 # filter to just ARDS (J80) patients ----------------
 ARDS_data <- merged_data %>%
