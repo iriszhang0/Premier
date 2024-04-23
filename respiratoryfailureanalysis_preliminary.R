@@ -561,3 +561,5 @@ tab2_covid <- cbind(Est = fixef(m2_covid),
                    UL = fixef(m2_covid) + 1.96 * se2_covid)
 round(exp(tab2_covid),3)
 
+
+#test
