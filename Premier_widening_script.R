@@ -31,10 +31,8 @@ for (f in dta_files){ #dta_files
       rename(diagnoses_admit = A, diagnoses_primary = P, diagnoses_secondary = S) 
     
     print("writing new file")
-  
     file_name <- stringr::str_c(stringr::str_c("wide_", stringr::str_split(f, "\\.")[[1]][1]), ".csv")
-    #haven::write_dta(data = new_df, path = file_name)
-    readr::write_csv(new_df, file_name)
+    readr::write_csv(new_df, file = file_name)
     print(Sys.time())
   }
   
