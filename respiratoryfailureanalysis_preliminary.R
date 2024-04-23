@@ -47,6 +47,7 @@ print("merging")
 merged_data <- merge(merged_data, region, by = "prov_id", all.x = TRUE)
 print(Sys.time())
 
+
 #create respiratory variables and covariates ------------
 
 print("creating ARDS")
@@ -120,6 +121,28 @@ merged_data$insurance <- factor(merged_data$insurance,
                                 levels = c("private", "medicaid", "medicare",
                                            "other"))
 
+
+## mechanical ventilator coding, recreated from M. Ghous's code --------------
+
+# 1.import ICD PROC Files
+setwd("/scratch/Premier/Raw_Data/_paticd_proc")
+print("loading .... proc")
+print(Sys.time())
+load("nyu_allyears_proc.RData")
+print(Sys.time())
+
+# 2.filter for mechanical ventilation codes
+mech_vent_icd_codes = c('5A1935Z', '5A1945Z', '5A1955Z') # mechanical ventilation ICD codes
+
+mech_vent_patients <- all_proc %>%
+  filter(all_proc_codes %in% mech_vent_icd_code)
+  
+
+# 3.select unique patient keys to identify which patients had a mech. vent. code
+pat_with_mech_vent <- unique(mech_vent_patients$pat_key)
+
+# 4. create dummy variable in dataset with 1 (or 0) for mech. vent (or not)
+merged_data$mech_vent <- ifelse(merged_data$pat_key %in% pat_with_mech_vent)
 
 # add region factor to the dataset -------------------------------------
 print("creating region variable for hosptials")

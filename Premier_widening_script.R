@@ -1,4 +1,4 @@
-
+# ICD DIAG -----------------
 setwd("/scratch/Premier/Raw_Data/_paticd_diag")
 
 library(dplyr)
@@ -38,6 +38,7 @@ for (f in dta_files){ #dta_files
   
 }
 
+# PATCPT--------------
 # _patcpt
 # KEEP: pat_key, cpt_code
 #
@@ -76,7 +77,7 @@ for (f in dta_files){ #
   
 }
 
-
+# PAT ICD PROC ---------------
 #
 # _paticd_proc 
 # KEEP: pat_key, icd_code
@@ -102,7 +103,7 @@ for (f in dta_files){
     print(Sys.time())
     new_df <- temp_file2 %>%
       group_by(pat_key) %>%
-      mutate(p = toString(icd_code)) %>%
+      mutate(all_proc_codes = toString(icd_code)) %>%
       select(-icd_code) %>%
       distinct()
     
@@ -114,6 +115,7 @@ for (f in dta_files){
   
 }
 
+# PAT ICD PROC day of procedure -----------
 # paticd_proc with day of procedure
 # _paticd_proc 
 # KEEP: pat_key, icd_code, proc_day
