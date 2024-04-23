@@ -44,7 +44,7 @@ print(Sys.time())
 
 print("merging")
 #colnames(region) <- tolower(colnames(region))
-merged_data <- merge(merged_data, region, by = "prov_id", all.x = TRUE)
+merged_data <- left_join(merged_data, region, by = c("prov_id" = "PROV_ID"))
 print(Sys.time())
 
 
@@ -122,7 +122,7 @@ merged_data$insurance <- factor(merged_data$insurance,
                                            "other"))
 
 
-## mechanical ventilator coding, recreated from M. Ghous's code --------------
+## invasive mechanical ventilator coding, recreated from M. Ghous's code --------------
 
 # 1.import ICD PROC Files
 setwd("/scratch/Premier/Raw_Data/_paticd_proc")
@@ -131,26 +131,26 @@ print(Sys.time())
 load("nyu_allyears_proc.RData")
 print(Sys.time())
 
-# 2.filter for mechanical ventilation codes
+# 2.filter for invasive mechanical ventilation codes
 mech_vent_icd_codes = c('5A1935Z', '5A1945Z', '5A1955Z') # mechanical ventilation ICD codes
 
 mech_vent_patients <- all_proc %>%
-  filter(all_proc_codes %in% mech_vent_icd_code)
+  filter(all_proc_codes %in% mech_vent_icd_codes)
   
 
 # 3.select unique patient keys to identify which patients had a mech. vent. code
 pat_with_mech_vent <- unique(mech_vent_patients$pat_key)
 
 # 4. create dummy variable in dataset with 1 (or 0) for mech. vent (or not)
-merged_data$mech_vent <- ifelse(merged_data$pat_key %in% pat_with_mech_vent)
+merged_data$mech_vent <- ifelse(merged_data$pat_key %in% pat_with_mech_vent, 1, 0)
 
 # add region factor to the dataset -------------------------------------
 print("creating region variable for hosptials")
 #merge middle atlantic and new england
-merged_data[merged_data$prov_division == "MIDDLE ATLANTIC",]$prov_division <- "NEW ENGLAND"
+merged_data[merged_data$PROV_DIVISION == "MIDDLE ATLANTIC",]$PROV_DIVISION <- "NEW ENGLAND"
 #merge mountain and WEST NORTH CENTRAL
-merged_data[merged_data$prov_division == "MOUNTAIN",]$prov_division <- "WEST NORTH CENTRAL"
-table(merged_data$prov_division)
+merged_data[merged_data$PROV_DIVISION == "MOUNTAIN",]$PROV_DIVISION <- "WEST NORTH CENTRAL"
+table(merged_data$PROV_DIVISION)
 
 
 # filter to just ARDS (J80) patients ----------------
