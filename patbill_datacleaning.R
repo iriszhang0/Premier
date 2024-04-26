@@ -13,6 +13,13 @@ library(readr)
 
 #load, filter, merge and save data -----------------
 
+## INSTRUCTIONS: 
+## step 1: create a new folder from terminal on SRDE
+## step 2: add the charge code you want to "filter()"
+## step 3: rename file to a name that makes sense with the charge code you chose
+## step 4: add name of folder you created to file path for where you save merged data
+## note: everywhere in code with '[]' you need to add your own name
+
 setwd("/scratch/Premier/Raw_Data/_patbill")
 
 files <- list.files() #lists files in folder
@@ -27,7 +34,7 @@ for (f in dta_files){ #loop through the list of files
   
   print("filtering for pat billing code")
   
-  temp2 <- temp %>% filter(STD_CHG_CODE == "")
+  temp2 <- temp %>% filter(STD_CHG_CODE == "[]")
   
   if (init == 1) { #first file
     data <- temp2
@@ -37,8 +44,8 @@ for (f in dta_files){ #loop through the list of files
   }
   
   #rename to whatever billing code we've looked for
-  phys_restraint <- data
-  save(phys_restraint, file = "nyu_allyears_diagnosis.RData")
+  '[]' <- data
+  save(phys_restraint, file = "[FOLDER NAME]/[FILE NAME].RData")
   
 }
 
