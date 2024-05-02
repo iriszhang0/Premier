@@ -34,7 +34,7 @@ for (f in dta_files){ #loop through the list of files
   
   print("filtering for pat billing code")
   
-  temp2 <- temp %>% filter(STD_CHG_CODE == "[]")
+  temp2 <- temp %>% filter(STD_CHG_CODE == "[]") #as numeric
   
   if (init == 1) { #first file
     data <- temp2
