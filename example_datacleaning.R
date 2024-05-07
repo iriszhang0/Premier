@@ -231,16 +231,74 @@ Diabetes_with_Chronic_Complications <- c("E08", "E09",
 
 
 
+#Charlson Comorbidity Index (CCI) - hierarchy rule
+###Rule 1
+priority_dx1 <- function(diagnoses_all) {
+  if ("hemiplegia" %in% diagnoses_all) {
+    return("hemiplegia")
+  } else if ("cerebrovascular disease" %in% diagnoses_all) {
+    return("cerebrovascular disease")
+  } else {
+    return(NA)
+  }
+}
+
+###Rule 2
+priority_dx2 <- function(diagnoses_all) {
+  if ("mod-sev liver dis" %in% diagnoses_all) {
+    return("mod-sev liver dis")
+  } else if ("mild liver dis" %in% diagnoses_all) {
+    return("mild liver dis")
+  } else {
+    return(NA)
+  }
+}
+
+###Rule 3
+priority_dx3 <- function(diagnoses_all) {
+  if ("complicated DM" %in% diagnoses_all) {
+    return("complicated DM")
+  } else if ("uncomplicated DM" %in% diagnoses_all) {
+    return("uncomplicated DM")
+  } else {
+    return(NA)
+  }
+}
+
+###Rule 4
+priority_dx4 <- function(diagnoses_all) {
+  if ("severe renal" %in% diagnoses_all) {
+    return("severe renal")
+  } else if ("mild-mod renal" %in% diagnoses_all) {
+    return("mild-mod renal")
+  } else {
+    return(NA)
+  }
+}
+
+###Rule 5
+priority_dx5 <- function(diagnoses_all) {
+  if ("solid tumor" %in% diagnoses_all) {
+    return("solid tumor")
+  } else if ("malignancy" %in% diagnoses_all) {
+    return("malignancy")
+  } else {
+    return(NA)
+  }
+}
 
 
-
-merged_data <- merged_data %>%
-  mutate(age_score = case_when(age < 50 ~ 0,
-                               age >= 50 & age <= 59 ~ 1,
-                               age >= 60 & age <= 69 ~ 2,
-                               age >= 70 & age <= 79 ~ 3,
-                               age >= 80 ~ 4),
-         )
+###Rule 6
+priority_dx6 <- function(diagnoses_all) {
+  if ("AIDS" %in% diagnoses_all) {
+    return("AIDS")
+  } else if ("HIV" %in% diagnoses_all) {
+    return("HIV")
+  } else {
+    return(NA)
+  }
+}
+      
 
 
 
