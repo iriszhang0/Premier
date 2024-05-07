@@ -151,6 +151,74 @@ table(merged_data$PROV_DIVISION)
 
 
 
+## Charlson Comorbidity Index --------------------------
+MI_codes <- c("I21", "I22", "I25.2")
+
+congestive_heart_codes <- c("I11.0", "I13.0", "I13.2", "I25.5",
+                            "I42.0", "I42.5", "I42.6", "I42.7",
+                            "I42.8", "I42.9", "I43", "150", "P29.0")
+
+peripheral_vascular_codes <- c("I70", "I71", "I73.1", "I73.8", "I73.9",
+                               "I77.1", "I79.0", "I79.1", "I79.8",
+                               "K55.1", "K55.8", "K55.9", "Z95.8", 
+                               "Z95.9")
+
+cerebrovascular_disease_codes <- c("G45", "G46", "H34.0", "H34.1",
+                                   "H34.2", "I60", "I61", "I62", "I63",
+                                   "I64", "I65", "I66", "I67", "I68")
+
+dementia_codes <- c("F01", "F02", "F03", "F04", "F05", "F06.1", 
+                    "F06.8", "G13.2", "G13.8", "G30", "G31.0",
+                    "G31.2", "G91.4", "G94", "R41.81", "R54")
+
+chronic_pulmonary_codes <- c("J40", "J41", "J42", "J43", "J44",
+                             "J45", "J46", "J47", "J60", "J61",
+                             "J62", "J63", "J64", "J65", "J66",
+                             "J67", "J68.4", "J70.1", "J70.3")
+
+rheumatic_disease_codes <- c("M05", "M06", "M31.5", "M32", "M33",
+                             "M34", "M35.1", "M35.3", "M36.0")
+
+peptic_ulcer_codes <- c("K25", "K26", "K27", "K28")
+
+mild_liver_codes <- c("B18", "K70.0", "K70.1", "K70.2", "K70.3",
+                      "K70.9", "K71.3", "K71.4", "K71.5",
+                      "K71.7", "K73", "K74", "K76.0", "K76.2",
+                      "K76.3", "K76.4", "K76.8", "K76.9", "Z94.4")
+
+#note the wildcards in this set of codes
+diabetes_wo_complications_codes <- c("E08", "E09", "E10", "E11", 
+                                     "E13", "E..\\.0", "E..\\.1",
+                                     "E..\\.6", "E..\\.8", "E..\\.9")
+
+renal_mildmoderate_codes <- c("I12.9", "I13.0", "I13.10",
+                              "N03", "N05", "N18.1", "N18.2",
+                              "N18.3", "N18.4", "N18.9", "Z94.0")
+
+
+
+
+
+
+
+
+
+
+
+
+
+merged_data <- merged_data %>%
+  mutate(age_score = case_when(age < 50 ~ 0,
+                               age >= 50 & age <= 59 ~ 1,
+                               age >= 60 & age <= 69 ~ 2,
+                               age >= 70 & age <= 79 ~ 3,
+                               age >= 80 ~ 4),
+         )
+
+
+
+
+
 # Other data cleaning operations --------------------
 ## filter to just ARDS (J80) patients ----------------
 ARDS_data <- merged_data %>%
