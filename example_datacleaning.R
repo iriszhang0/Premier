@@ -196,10 +196,37 @@ renal_mildmoderate_codes <- c("I12.9", "I13.0", "I13.10",
                               "N18.3", "N18.4", "N18.9", "Z94.0")
 
 
+AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
+                "B00", "B39", "A07.3", "C46", "C81", "C82", "C83",
+                "C84", "C85", "C86", "C87", "C88", "C89", "C90",
+                "C91", "C92", "C93", "C94", "C95", "C96", "A31",
+                "A15", "A16", "A17", "A18", "A19", "B59", "Z87.01",
+                "A81.2", "A02.1", "B58", "R64")
 
+Metastatic_Solid_Tumor <- c("C77", "C78", "C79", "C80.0", "C80.2")
 
+HIV_Infection <- c("B20")
 
+Renal_Severe <- c("I12.0", "I13.11", "I13.2", "N18.5", "N18.6", "N19", "N25.0",
+                  "Z49", "Z99.2")
+Moderate_or_Severe_Liver_Disease <- c("I85.0", "I86.4", "K70.4", "K71.1",
+                                      "K72.1", "K72.9", "K76.5", "K76.6",
+                                      "K76.7")
+Any_Malignancy_Lymphoma_Leukemia_except_Malignant_Nonmelanoma_Neoplasm_of_skin <- c("C0", "C1", "C2", "C30", "C31",
+                                                                                    "C32", "C33", "C34", "C37", "C38",
+                                                                                    "C39", "C40", "C41", "C43", "C45", 
+                                                                                    "C46", "C47", "C48", "C49", "C50",
+                                                                                    "C51", "C52", "C53", "C54", "C55",
+                                                                                    "C56", "C57", "C58", "C60", "C61", 
+                                                                                    "C62", "C63", "C76", "C80.1", "C81",
+                                                                                    "C82", "C83", "C84", "C85", "C88", "C9")
 
+Hemiplegia_or_Paraplegia <- c("G04.1", "G11.4", "G80.0",
+                              "G80.1", "G80.2", "G81",
+                              "G82", "G83")
+
+Diabetes_with_Chronic_Complications <- c("E08", "E09", 
+                                         "E10", "E11", "E13")
 
 
 
