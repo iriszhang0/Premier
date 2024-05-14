@@ -65,11 +65,11 @@ print(Sys.time())
 ## ARDS/J96 ----------------
 print("creating ARDS")
 merged_data <- merged_data %>%
-  mutate(ARDS = if_else(stringr::str_detect(all_diagnoses, "J80"), 1, 0))
+  mutate(ARDS = if_else(stringr::str_detect(diagnoses_all, "J80"), 1, 0))
 
 print("creating J96")
 merged_data <- merged_data %>%
-  mutate(J96 = if_else(stringr::str_detect(all_diagnoses, "J96"), 1, 0))
+  mutate(J96 = if_else(stringr::str_detect(diagnoses_all, "J96"), 1, 0))
 
 ## Death ---------------
 #create death (anytime) variable
@@ -107,8 +107,8 @@ merged_data$race_ethnicity <- factor(merged_data$race_ethnicity,
 # diagnosis of obesity "E66.0", "E66.1" "E66.2" "E66.8" "E66.9"
 print("creating obesity variable")
 merged_data <- merged_data %>%
-  mutate(E66 = if_else(stringr::str_detect(all_diagnoses, "E66"), 1, 0),
-         E66.3 = if_else(stringr::str_detect(all_diagnoses, "E66.3"), 1, 0),
+  mutate(E66 = if_else(stringr::str_detect(diagnoses_all, "E66"), 1, 0),
+         E66.3 = if_else(stringr::str_detect(diagnoses_all, "E66.3"), 1, 0),
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
 
