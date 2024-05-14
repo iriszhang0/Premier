@@ -231,7 +231,8 @@ AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
 
 
 ## create CCI score ------------------
-
+print("creating CCI score ...")
+print(Sys.time())
 ARDS_data <- ARDS_data %>%
   rowwise() %>%
   mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0), 
@@ -267,6 +268,213 @@ ARDS_data <- ARDS_data %>%
            cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
            cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
            .default = CCI_raw))
+
+print(Sys.time()) #16 minutes
+
+# descriptive statistics -----------------
+
+## CCI
+summary(ARDS_data$CCI)
+mean(ARDS_data$CCI)
+sd(ARDS_data$CCI)
+
+#sample sizes
+length(unique(merged_data$pat_key)) #total sample size
+length(ARDS_data$pat_key) #ARDS patients
+
+length(unique(ARDS_data$prov_id)) #number of hospitals
+
+#gender
+sum(ARDS_data$gender == "M") #number of men
+table(ARDS_data$gender)
+table(ARDS_data$gender)/length(ARDS_data$pat_key) #proportion
+
+
+#race and ethnicity
+table(ARDS_data$race_ethnicity)
+table(ARDS_data$race_ethnicity)/length(ARDS_data$pat_key)
+
+# age
+summary(ARDS_data$age) #age distribution
+mean(ARDS_data$age, na.rm = TRUE)
+sd(ARDS_data$age, na.rm = TRUE)
+sum(is.na(ARDS_data$age))
+
+# death at discharge or hospice
+table(ARDS_data$death_or_hospice)
+table(ARDS_data$death_or_hospice)/length(ARDS_data$pat_key) #proportion
+
+#obesity
+table(ARDS_data$obesity)
+table(ARDS_data$obesity)/length(ARDS_data$pat_key) #proportion
+
+#insurance type
+table(ARDS_data$insurance)
+table(ARDS_data$insurance)/length(ARDS_data$pat_key) #proportion
+
+# Bivariate association Table 2a --------------------
+chisq.test(ARDS_data$death_or_hospice, ARDS_data$race_ethnicity) #death
+chisq.test(ARDS_data$gender, ARDS_data$race_ethnicity) #gender
+chisq.test(ARDS_data$obesity, ARDS_data$race_ethnicity) #obesity
+chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
+
+t.test(filter(ARDS_data, race_ethnicity == "nonHispanic_White")$CCI,
+       filter(ARDS_data, race_ethnicity == "Asian")$CCI) #CCI
+
+
+
+# Bivariate association Table 2b -----------------
+chisq.test(ARDS_data$race_ethnicity, ARDS_data$death_or_hospice) #race
+chisq.test(ARDS_data$gender, ARDS_data$death_or_hospice) #gender
+chisq.test(ARDS_data$obesity, ARDS_data$death_or_hospice) #obesity
+chisq.test(ARDS_data$insurance, ARDS_data$death_or_hospice) #insurance type
+
+t.test(filter(ARDS_data, death_or_hospice == 1)$age,
+       filter(ARDS_data, death_or_hospice == 0)$age) #age
+t.test(filter(ARDS_data, death_or_hospice == 1)$CCI,
+       filter(ARDS_data, death_or_hospice == 0)$CCI) #CCI
+
+
+# Odds of in-hospital death -----------------------
+library(lme4) 
+
+## split by Covid period -----------
+# pre-covid
+pre_covid <- c(2017101, 2016412, 2016411, 2017102, 2016308, 2016410,
+               2017103, 2017204, 2017205, 2017206, 2017307, 2017308,
+               2017309, 2013309, 2017410, 2017411, 2017412, 2018101,
+               2018102, 2018103, 2018204, 2018205, 2018206, 2018307,
+               2018308, 2018309, 2018410, 2018411, 2018412, 2019101,
+               2019102, 2019103, 2019204, 2019205, 2019206, 2019307,
+               2019308, 2019309, 2019410, 2019411, 2019412, 2020101,
+               2020102) #up to Feb 2020
+
+covid <- c(2020103, 2020204, 2020205, 2020206, 2020307, 2020308, 
+           2020309, 2020410, 2020411, 2020412, 2021103, 2021204,
+           2021102, 2021101, 2021205, 2021206, 2021307, 2021308,
+           2021309)
+
+# split ARDS into two dataset
+ARDS_precovid <- ARDS_data %>%
+  filter(adm_mon %in% pre_covid)
+
+ARDS_covid <- ARDS_data %>%
+  filter(adm_mon %in% covid)
+
+
+## null --------------
+### pre-covid -------------------
+m_null_pre <- glmer(death_or_hospice ~ 1 + (1 | prov_id),
+                data = ARDS_precovid, family = binomial)
+summary(m_null_pre)
+
+se_null_pre <- sqrt(diag(vcov(m_null_pre)))
+# table of estimates with 95% CI
+tab_null_pre <- cbind(Est = fixef(m_null_pre), 
+                  LL = fixef(m_null_pre) - 1.96 * se_null_pre,
+                  UL = fixef(m_null_pre) + 1.96 * se_null_pre)
+exp(tab_null_pre)
+
+
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(m_null_pre),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+
+### covid -------------------
+m_null_c <- glmer(death_or_hospice ~ 1 + (1 | prov_id),
+                    data = ARDS_covid, family = binomial)
+summary(m_null_c)
+
+se_null_c <- sqrt(diag(vcov(m_null_c)))
+# table of estimates with 95% CI
+tab_null_c <- cbind(Est = fixef(m_null_c), 
+                      LL = fixef(m_null_c) - 1.96 * se_null_c,
+                      UL = fixef(m_null_c) + 1.96 * se_null_c)
+exp(tab_null_c)
+
+
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(m_null_c),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+
+## unadjusted -------------------
+print(Sys.time())
+m1 <- glmer(death_or_hospice ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_precovid, family = binomial)
+print(Sys.time()) #approx 4 mins to run
+summary(m1)
+se_1 <- sqrt(diag(vcov(m1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(m1), 
+               LL = fixef(m1) - 1.96 * se_1,
+               UL = fixef(m1) + 1.96 * se_1)
+exp(tab_1)
+
+performance::icc(m1)
+
+print(Sys.time())
+m2 <- glmer(death_or_hospice ~ race_ethnicity + (1 | prov_id), 
+            data = ARDS_covid, family = binomial)
+print(Sys.time()) #approx 4 mins to run
+summary(m2)
+se_2 <- sqrt(diag(vcov(m2)))
+# table of estimates with 95% CI
+tab_2 <- cbind(Est = fixef(m2), 
+               LL = fixef(m2) - 1.96 * se_2,
+               UL = fixef(m2) + 1.96 * se_2)
+exp(tab_2)
+
+performance::icc(m2)
+
+
+## adjusted -------------------
+
+print(Sys.time())
+m3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + 
+              insurance + CCI + (1 | prov_id), 
+            data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m3)
+
+se_3 <- sqrt(diag(vcov(m3)))
+# table of estimates with 95% CI
+tab_3 <- cbind(Est = round(fixef(m3), digits = 3), 
+               LL = round(fixef(m3) - 1.96 * se_3, digits = 3),
+               UL = round(fixef(m3) + 1.96 * se_3, digits = 3))
+round(exp(tab_3), 3)
+
+# Add ICC for adjusted model
+performance::icc(m3)
+
+print(Sys.time())
+m4 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + 
+              insurance + CCI + (1 | prov_id), 
+            data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m4)
+
+se_4 <- sqrt(diag(vcov(m4)))
+# table of estimates with 95% CI
+tab_4 <- cbind(Est = fixef(m4), 
+               LL = fixef(m4) - 1.96 * se_4,
+               UL = fixef(m4) + 1.96 * se_4)
+round(exp(tab_4), 3)
+
+# Add ICC for adjusted model
+performance::icc(m4)
+
 
 
 
