@@ -239,12 +239,39 @@ AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
                 "A15", "A16", "A17", "A18", "A19", "B59", "Z87.01",
                 "A81.2", "A02.1", "B58", "R64")
 
-print("Creating CCI ....")
+
+# filter by outcome (e.g. ARDS/J80) ----------------
+ARDS_data <- merged_data %>%
+  filter(ARDS == 1)
+
+J96_data <- merged_data %>%
+  filter(J96 == 1)
+
+mechvent_data <- merged_data %>%
+  filter(mech_vent == 1)
+
+# drop "unknown" as missing ----------------
+
+
+ARDS_data <- ARDS_data %>%
+  filter(gender != "U" & #dropped 47 observations
+         race_ethnicity != "Unknown") 
+
+J96_data <- J96_data %>%
+  filter(gender != "U" & #dropped xx observations
+           race_ethnicity != "Unknown") 
+
+mechvent_data <- mechvent_data %>%
+  filter(gender != "U" & #dropped xx observations
+           race_ethnicity != "Unknown") 
+
+# create CCI in these smaller datasets -----------------
+## create CCI score ------------------
+# 
 print(Sys.time())
-merged_data1 <- merged_data %>%
-  filter(ARDS == 1 | J96 == 1 | mech_vent == 1) %>%
+ARDS_data <- ARDS_data %>%
   rowwise() %>%
-  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0), 
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
          cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
          cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
          cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
@@ -263,8 +290,8 @@ merged_data1 <- merged_data %>%
          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
-         cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes) &
-                                 any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))) %>% #HIV + opportunistic infect.
+         cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                             any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) %>% #HIV + opportunistic infect.
   rowwise() %>%
   mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
            cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
@@ -278,38 +305,34 @@ merged_data1 <- merged_data %>%
            cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
            cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
            .default = CCI_raw))
+print(Sys.time()) #aprox 13 mins
 
-print(Sys.time())
+# Organ failure score -------------------------------------------
+## Following Dombrovskiy et al. approach from Bosch et al., (2020)."Predictive Validity"
 
 
-
-# filter by outcome (e.g. ARDS/J80) ----------------
-ARDS_data <- merged_data1 %>%
-  filter(ARDS == 1)
-
-J96_data <- merged_data1 %>%
-  filter(J96 == 1)
-
-mechvent_data <- merged_data1 %>%
-  filter(mech_vent == 1)
-
-# drop "unknown" as missing ----------------
-
+cvd_sofa <- c("R57", "I95.1", "I95.89", "I95.9", "R03.1", "R65.21", "I46.9")
+resp_sofa <- c("J96.0", "J96.9", "J80", "R06.00", "R06.03", "R06.09",
+               "R06.3", "R06.83", "R06.89", "R09.2")
+neuro_sofa <- c("F05", "G93.1", "G93.40", "R40.1", "R40.2")
+hema_sofa <- c("D65", "D68.8", "D68.9", "D69.59", "D69.6")
+hepatic_sofa <- c("K72.00", "K72.01", "K72.91", "K76.2", "K76.3")
+renal_sofa <- c("N17")
 
 ARDS_data <- ARDS_data %>%
-  filter(gender != "U" & #dropped 47 observations
-         race_ethnicity != "Unknown") 
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
 
-J96_data <- J96_data %>%
-  filter(gender != "U" & #dropped xx observations
-           race_ethnicity != "Unknown") 
-
-mechvent_data <- mechvent_data %>%
-  filter(gender != "U" & #dropped xx observations
-           race_ethnicity != "Unknown") 
 
 
-# sample size ----------------
+# table 1a: sample size ----------------
 #sample sizes
 length(unique(merged_data$pat_key)) #total sample size
 length(ARDS_data$pat_key) #ARDS patients
@@ -355,23 +378,33 @@ table(ARDS_data$obesity)/length(ARDS_data$pat_key) #proportion
 table(ARDS_data$insurance)
 table(ARDS_data$insurance)/length(ARDS_data$pat_key) #proportion
 
+#CCI
+mean(ARDS_data$CCI)
+sd(ARDS_data$CCI)
+
+#Organ failure
+mean(ARDS_data$organ_failure)
+sd(ARDS_data$organ_failure)
+
+# Table 1b ------------------
 
 #death by race/ethnicity
 table(ARDS_data$death, ARDS_data$race_ethnicity)
 
+# Table 1c -----------------------
 
+#death by race/ethnicity
+table(ARDS_data$death_or_hospice, ARDS_data$race_ethnicity)
 
 # Bivariate association Table 2a --------------------
+# main predictor (race)
 chisq.test(ARDS_data$death, ARDS_data$race_ethnicity) #death
 chisq.test(ARDS_data$gender, ARDS_data$race_ethnicity) #gender
 chisq.test(ARDS_data$obesity, ARDS_data$race_ethnicity) #obesity
-
 chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
 
 
-
-
-# Bivariate association Table 2b -----------------
+# outcome (death)
 chisq.test(ARDS_data$race_ethnicity, ARDS_data$death) #race
 #chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
 chisq.test(ARDS_data$gender, ARDS_data$death) #gender
@@ -383,13 +416,16 @@ chisq.test(ARDS_data$insurance, ARDS_data$death) #insurance type
 
 
 t.test(filter(ARDS_data, death == 1)$age, filter(ARDS_data, death == 0)$age) #age
+t.test(filter(ARDS_data, death == 1)$CCI, filter(ARDS_data, death == 0)$CCI) #CCI
+t.test(filter(ARDS_data, death == 1)$organ_failure, 
+       filter(ARDS_data, death == 0)$organ_failure) #organ failure
 
 
-# Odds of in-hospital death -----------------------
+# Table 3a: Odds of in-hospital death -----------------------
 
-
+## All patients ----------------------------
 library(lme4) 
-## null --------------
+### null --------------
 m_null <- glmer(death ~ 1 + (1 | prov_id),
                 data = ARDS_data, family = binomial)
 summary(m_null)
@@ -413,7 +449,7 @@ icc_hand <- sigma2_0/total_var
 icc_hand
 
 
-## unadjusted -------------------
+### unadjusted -------------------
 print(Sys.time())
 m0 <- glmer(death ~ race_ethnicity + (1 | prov_id), 
             data = ARDS_data, family = binomial)
@@ -429,7 +465,7 @@ exp(tab_0)
 performance::icc(m0)
 
 
-## adjusted ---------------------------
+### adjusted ---------------------------
 print(Sys.time())
 m1 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data, family = binomial)
@@ -446,7 +482,44 @@ exp(tab_1)
 # Add ICC for adjusted model
 performance::icc(m1)
 
-# Models restricted for hospitals > 10 patients ----------------
+### adjusted + CCI ---------------------------
+print(Sys.time())
+m2 <- glmer(death ~ race_ethnicity + age + gender + insurance + CCI +
+              (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m2)
+
+se_2 <- sqrt(diag(vcov(m2)))
+# table of estimates with 95% CI
+tab_2 <- cbind(Est = fixef(m2), 
+               LL = fixef(m2) - 1.96 * se_2,
+               UL = fixef(m2) + 1.96 * se_2)
+exp(tab_2)
+
+# Add ICC for adjusted model
+performance::icc(m2)
+
+### adjusted + CCI + organ failure ---------------------------
+print(Sys.time())
+m3 <- glmer(death ~ race_ethnicity + age + gender + insurance + 
+              CCI + organ_failure + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m3)
+
+se_3 <- sqrt(diag(vcov(m3)))
+# table of estimates with 95% CI
+tab_3 <- cbind(Est = fixef(m3), 
+               LL = fixef(m3) - 1.96 * se_3,
+               UL = fixef(m3) + 1.96 * se_3)
+exp(tab_3)
+
+# Add ICC for adjusted model
+performance::icc(m3)
+
+
+## Restricted for hospitals > 10 patients ----------------
 occurrences <- table(ARDS_data$prov_id)
 ARDS_data$hospital.patient.count <- occurrences[ARDS_data$prov_id]
 ARDS_data_hosp10 <- ARDS_data[ARDS_data$hospital.patient.count > 10, ]
@@ -476,7 +549,7 @@ tab_0_hosp10 <- cbind(Est = fixef(m0_hosp10),
 exp(tab_0_hosp10)
 performance::icc(m0_hosp10)
 
-## adjusted ---------------------------
+## adjusted 
 print(Sys.time())
 m1_hosp10 <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data_hosp10, family = binomial)
@@ -492,7 +565,7 @@ performance::icc(m1_hosp10)
 
 
 
-# Models restricted for hospitals with at least one patient identified as Asian ----------------
+## Restricted for hospitals with at least one patient identified as Asian ----------------
 asian_count <- ARDS_data %>%
   filter(race_ethnicity == "Asian") %>%
   pull(prov_id) %>%
@@ -528,7 +601,7 @@ tab_0_Aisan <- cbind(Est = fixef(m0_Aisan),
 exp(tab_0_Aisan)
 performance::icc(m0_Aisan)
 
-## adjusted ---------------------------
+## adjusted 
 print(Sys.time())
 m1_Aisan <- glmer(death ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
                    data = ARDS_data_Aisan, family = binomial)
@@ -544,9 +617,10 @@ performance::icc(m1_Aisan)
 
 
 
-# Odds of death or hospice transfer -----------------------
+# Table 3b: Odds of death or hospice transfer -----------------------
 
 ## null --------------
+print("null model")
 m2_null <- glmer(death_or_hospice ~ 1 + (1 | prov_id),
                 data = ARDS_data, family = binomial)
 summary(m2_null)
@@ -571,6 +645,7 @@ icc_hand
 
 
 ## unadjusted -------------------
+print("unadjusted model")
 print(Sys.time())
 m3 <- glmer(death_or_hospice ~ race_ethnicity + (1 | prov_id), 
             data = ARDS_data, family = binomial)
@@ -587,6 +662,7 @@ performance::icc(m3)
 
 
 ## adjusted ---------------------------
+print("adjusted model")
 print(Sys.time())
 m4 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance + (1 | prov_id), 
             data = ARDS_data, family = binomial)
@@ -603,8 +679,45 @@ exp(tab_4)
 # Add ICC for adjusted model
 performance::icc(m4)
 
+## adjusted  + CCI ---------------------------
+print("adjusted and CCI model")
+print(Sys.time())
+m_3b_2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance + 
+              CCI + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m_3b_2)
 
-# Models by Covid period ----------------
+se_3b_2 <- sqrt(diag(vcov(m_3b_2)))
+# table of estimates with 95% CI
+tab_3b_2 <- cbind(Est = fixef(m_3b_2), 
+               LL = fixef(m_3b_2) - 1.96 * se_3b_2,
+               UL = fixef(m_3b_2) + 1.96 * se_3b_2)
+exp(tab_3b_2)
+
+# Add ICC for adjusted model
+performance::icc(m_3b_2)
+
+## adjusted + CCI + organ failure ---------------------------
+print(Sys.time())
+m_3b_3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance + 
+                  CCI + organ_failure + (1 | prov_id), 
+            data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(m_3b_3)
+
+se_3b_3 <- sqrt(diag(vcov(m_3b_3)))
+# table of estimates with 95% CI
+tab_3b_3 <- cbind(Est = fixef(m_3b_3), 
+               LL = fixef(m_3b_3) - 1.96 * se_3b_3,
+               UL = fixef(m_3b_3) + 1.96 * se_3b_3)
+exp(tab_3b_3)
+
+# Add ICC for adjusted model
+performance::icc(m_3b_3)
+
+
+# Table 4: Models by Covid period ----------------
 
 #dates
 unique(ARDS_data$adm_mon)
@@ -636,69 +749,211 @@ ARDS_covid <- ARDS_data %>%
 dim(ARDS_precovid)
 dim(ARDS_covid)
 
-## multivariate models, death -----------
+## table 4a, pre-covid, outcome death -----------
 
-## pre covid
+#adjusted
+print("adjusted")
 print(Sys.time())
-m_precovid <- glmer(death ~ race_ethnicity + age + gender + insurance + obesity + (1 | prov_id), 
+m_4a_1 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                      (1 | prov_id), 
             data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
-summary(m_precovid) #2 mins
+summary(m_4a_1) #2 mins
 
-se_precovid <- sqrt(diag(vcov(m_precovid)))
+se_4a_1 <- sqrt(diag(vcov(m_4a_1)))
 # table of estimates with 95% CI
-tab_precovid <- cbind(Est = fixef(m_precovid), 
-               LL = fixef(m_precovid) - 1.96 * se_precovid,
-               UL = fixef(m_precovid) + 1.96 * se_precovid)
-exp(tab_precovid)
+tab_4a_1 <- cbind(Est = fixef(m_4a_1), 
+               LL = fixef(m_4a_1) - 1.96 * se_4a_1,
+               UL = fixef(m_4a_1) + 1.96 * se_4a_1)
+exp(tab_4a_1)
 
 
-## covid
+#adjusted + CCI
+print("adjusted + CCI")
 print(Sys.time())
-m_covid <- glmer(death ~ race_ethnicity + age + gender + insurance + obesity + (1 | prov_id), 
-                    data = ARDS_covid, family = binomial)
-print(Sys.time()) #3 mins
-summary(m_covid)
-
-se_covid <- sqrt(diag(vcov(m_covid)))
-# table of estimates with 95% CI
-tab_covid <- cbind(Est = fixef(m_covid), 
-                      LL = fixef(m_covid) - 1.96 * se_covid,
-                      UL = fixef(m_covid) + 1.96 * se_covid)
-exp(tab_covid)
-
-## multivariate models, death or hospice -----------
-
-## pre-covid, death OR hospice
-print(Sys.time())
-m2_precovid <- glmer(death_or_hospice ~ race_ethnicity + age + gender +
-                      insurance + obesity + (1 | prov_id), 
-                    data = ARDS_precovid, family = binomial)
+m_4a_2 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                  CCI + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
-summary(m2_precovid) 
+summary(m_4a_2) 
 
-se2_precovid <- sqrt(diag(vcov(m2_precovid)))
+se_4a_2 <- sqrt(diag(vcov(m_4a_2)))
 # table of estimates with 95% CI
-tab2_precovid <- cbind(Est = fixef(m2_precovid), 
-                      LL = fixef(m2_precovid) - 1.96 * se2_precovid,
-                      UL = fixef(m2_precovid) + 1.96 * se2_precovid)
-round(exp(tab2_precovid),3)
+tab_4a_2 <- cbind(Est = fixef(m_4a_2), 
+                  LL = fixef(m_4a_2) - 1.96 * se_4a_2,
+                  UL = fixef(m_4a_2) + 1.96 * se_4a_2)
+exp(tab_4a_2)
 
-
-## covid, death OR hospice
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
 print(Sys.time())
-m2_covid <- glmer(death_or_hospice ~ race_ethnicity + age + gender +
-                    insurance + obesity + (1 | prov_id), 
-                 data = ARDS_covid, family = binomial)
+m_4a_3 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
-summary(m2_covid)
+summary(m_4a_3) 
 
-se2_covid <- sqrt(diag(vcov(m2_covid)))
+se_4a_3 <- sqrt(diag(vcov(m_4a_3)))
 # table of estimates with 95% CI
-tab2_covid <- cbind(Est = fixef(m2_covid), 
-                   LL = fixef(m2_covid) - 1.96 * se2_covid,
-                   UL = fixef(m2_covid) + 1.96 * se2_covid)
-round(exp(tab2_covid),3)
+tab_4a_3 <- cbind(Est = fixef(m_4a_3), 
+                  LL = fixef(m_4a_3) - 1.96 * se_4a_3,
+                  UL = fixef(m_4a_3) + 1.96 * se_4a_3)
+exp(tab_4a_3)
 
 
-#test
+## table 4b, pre-covid, outcome death or hospice -----------
+
+#adjusted
+print("adjusted")
+print(Sys.time())
+m_4b_1 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_1) #2 mins
+
+se_4b_1 <- sqrt(diag(vcov(m_4b_1)))
+# table of estimates with 95% CI
+tab_4b_1 <- cbind(Est = fixef(m_4b_1), 
+                  LL = fixef(m_4b_1) - 1.96 * se_4b_1,
+                  UL = fixef(m_4b_1) + 1.96 * se_4b_1)
+exp(tab_4b_1)
+
+
+#adjusted + CCI
+print("adjusted + CCI")
+print(Sys.time())
+m_4b_2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_2) 
+
+se_4b_2 <- sqrt(diag(vcov(m_4b_2)))
+# table of estimates with 95% CI
+tab_4b_2 <- cbind(Est = fixef(m_4b_2), 
+                  LL = fixef(m_4b_2) - 1.96 * se_4b_2,
+                  UL = fixef(m_4b_2) + 1.96 * se_4b_2)
+exp(tab_4b_2)
+
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4b_3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_3) 
+
+se_4b_3 <- sqrt(diag(vcov(m_4b_3)))
+# table of estimates with 95% CI
+tab_4b_3 <- cbind(Est = fixef(m_4b_3), 
+                  LL = fixef(m_4b_3) - 1.96 * se_4b_3,
+                  UL = fixef(m_4b_3) + 1.96 * se_4b_3)
+exp(tab_4b_3)
+
+
+## table 4c, Covid, outcome death -----------
+
+#adjusted
+print("adjusted")
+print(Sys.time())
+m_4c_1 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                  (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4c_1) #2 mins
+
+se_4c_1 <- sqrt(diag(vcov(m_4c_1)))
+# table of estimates with 95% CI
+tab_4c_1 <- cbind(Est = fixef(m_4c_1), 
+                  LL = fixef(m_4c_1) - 1.96 * se_4c_1,
+                  UL = fixef(m_4c_1) + 1.96 * se_4c_1)
+exp(tab_4c_1)
+
+
+#adjusted + CCI
+print("adjusted + CCI")
+print(Sys.time())
+m_4c_2 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                  CCI + (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4c_2) 
+
+se_4c_2 <- sqrt(diag(vcov(m_4c_2)))
+# table of estimates with 95% CI
+tab_4c_2 <- cbind(Est = fixef(m_4c_2), 
+                  LL = fixef(m_4c_2) - 1.96 * se_4c_2,
+                  UL = fixef(m_4c_2) + 1.96 * se_4c_2)
+exp(tab_4c_2)
+
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4c_3 <- glmer(death ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4c_3) 
+
+se_4c_3 <- sqrt(diag(vcov(m_4c_3)))
+# table of estimates with 95% CI
+tab_4c_3 <- cbind(Est = fixef(m_4c_3), 
+                  LL = fixef(m_4c_3) - 1.96 * se_4c_3,
+                  UL = fixef(m_4c_3) + 1.96 * se_4c_3)
+exp(tab_4c_3)
+
+## table 4d, Covid, outcome death or hospice transfer -----------
+
+#adjusted
+print("adjusted")
+print(Sys.time())
+m_4d_1 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_1) #2 mins
+
+se_4d_1 <- sqrt(diag(vcov(m_4d_1)))
+# table of estimates with 95% CI
+tab_4d_1 <- cbind(Est = fixef(m_4d_1), 
+                  LL = fixef(m_4d_1) - 1.96 * se_4d_1,
+                  UL = fixef(m_4d_1) + 1.96 * se_4d_1)
+exp(tab_4d_1)
+
+
+#adjusted + CCI
+print("adjusted + CCI")
+print(Sys.time())
+m_4d_2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_2) 
+
+se_4d_2 <- sqrt(diag(vcov(m_4d_2)))
+# table of estimates with 95% CI
+tab_4d_2 <- cbind(Est = fixef(m_4d_2), 
+                  LL = fixef(m_4d_2) - 1.96 * se_4d_2,
+                  UL = fixef(m_4d_2) + 1.96 * se_4d_2)
+exp(tab_4d_2)
+
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4d_3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_3) 
+
+se_4d_3 <- sqrt(diag(vcov(m_4d_3)))
+# table of estimates with 95% CI
+tab_4d_3 <- cbind(Est = fixef(m_4d_3), 
+                  LL = fixef(m_4d_3) - 1.96 * se_4d_3,
+                  UL = fixef(m_4d_3) + 1.96 * se_4d_3)
+exp(tab_4d_3)
+
+
+

@@ -10,6 +10,7 @@
 library(haven)
 library(dplyr)
 library(tidyr)
+library(stringr)
 
 
 # Load and merge data ----------------------
