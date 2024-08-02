@@ -39,17 +39,17 @@ print(Sys.time())
 
 print("creating ARDS")
 merged_data <- merged_data %>%
-  mutate(ARDS = if_else(stringr::str_detect(all_diagnoses, "J80"), 1, 0))
+  mutate(ARDS = if_else(stringr::str_detect(diagnoses_all, "J80"), 1, 0))
 
 print("creating acute_RF")
 merged_data <- merged_data %>%
-  mutate(acute_RF = if_else(stringr::str_detect(all_diagnoses, "J96.0"), 1, 0))
+  mutate(acute_RF = if_else(stringr::str_detect(diagnoses_all, "J96.0"), 1, 0))
 
 
 #Create derived prisoner variable 
 print("creating D_prisoner")
 merged_data <- merged_data %>%
-  mutate(D_prisoner = ifelse(point_of_origin == 8 | all_diagnoses == "Z65.1", 1,0))
+  mutate(D_prisoner = ifelse(point_of_origin == 8 | diagnoses_all == "Z65.1", 1,0))
 
 
 #create death (anytime) variable
@@ -77,8 +77,8 @@ merged_data$race_ethnicity <- factor(merged_data$race_ethnicity,
 #Create obesity variable
 print("creating obesity variable")
 merged_data <- merged_data %>%
-  mutate(E66 = if_else(stringr::str_detect(all_diagnoses, "E66"), 1, 0),
-         E66.3 = if_else(stringr::str_detect(all_diagnoses, "E66.3"), 1, 0),
+  mutate(E66 = if_else(stringr::str_detect(diagnoses_all, "E66"), 1, 0),
+         E66.3 = if_else(stringr::str_detect(diagnoses_all, "E66.3"), 1, 0),
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
 
@@ -99,6 +99,45 @@ incarcerated_data <- merged_data %>%
 #--------Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients ----------------
 RF_data <- incarcerated_data %>%
   filter(ARDS == 1 | acute_RF ==1)
+
+
+RF_data <-subset(RF_data, i_o_ind =="O")
+
+#-------------DROP Outpatient Patients in RF_Data---RF_data1---------
+RF_data1 <- incarcerated_data %>%
+  filter(ARDS == 1 | acute_RF ==1)
+RF_data1 <-subset(RF_data1, i_o_ind !="O")
+
+RF_data1 <- RF_data1 %>%
+  filter(gender != "U", #dropped 239 observations from gender, which were all from D_prisoner=0 category!!
+         race_ethnicity != "Unknown") #dropped 39,401 obs from race_ethnicity; 39,312 from D_prisoner=0 & 89 from D_prisoner=1
+RF_data_complete <- na.omit(RF_data1)
+
+
+#------#Psych Patients in RF_Data---psy------
+RF_datapsy <- incarcerated_data %>%
+  filter(ARDS == 1 | acute_RF ==1)
+#------------------Subset to only Psy patients
+RF_datapsy <-subset(RF_datapsy, pat_type == "24")
+length(unique(RF_datapsy$pat_key))
+
+#--------------drop both outpatients and psych patients----RF_datafinal------
+RF_datafinal <- incarcerated_data %>%
+  filter(ARDS == 1 | acute_RF ==1)
+length(unique(RF_datafinal$pat_key))
+
+RF_datafinal <-subset(RF_datafinal, i_o_ind !="O")
+length(unique(RF_datafinal$pat_key))
+
+RF_datafinal <-subset(RF_datafinal, pat_type != "24")
+length(unique(RF_datafinal$pat_key))
+
+RF_datafinal <- RF_datafinal %>%
+  filter(gender != "U", 
+         race_ethnicity != "Unknown") 
+RF_data_finalcomplete <- na.omit(RF_datafinal)
+length(unique(RF_data_finalcomplete$pat_key))
+
 
 #---------------------sample size ----------------
 #sample sizes
