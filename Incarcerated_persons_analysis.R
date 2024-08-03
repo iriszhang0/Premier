@@ -186,7 +186,7 @@ table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners 
 #table(dropped_cases$apr_sev)
 
 
-#-------------Descriptive Statistics in complete cases dataset (D_prisoner=1 vs D_prisoner=0)----------------------
+#-------------Table 1: Descriptive Statistics in complete cases dataset (D_prisoner=1 vs D_prisoner=0)----------------
 ##Outcome: disposition at discharge (alive vs dead)
 table(RF_data_complete$death, RF_data_complete$D_prisoner) #Death (N) by D_prisoner
 table(RF_data_complete$death, RF_data_complete$D_prisoner)/length(RF_data_complete$pat_key) #Proportion of death (%) by D_prisoner

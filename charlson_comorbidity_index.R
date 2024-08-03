@@ -108,10 +108,11 @@ AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
 
 
 ## create CCI score ------------------
-
-merged_data <- merged_data %>%
+# 
+print(Sys.time())
+data_test <- data_test %>%
   rowwise() %>%
-  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0), 
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
          cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
          cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
          cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
@@ -122,7 +123,7 @@ merged_data <- merged_data %>%
          cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
          cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
          cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0),
-         
+
          cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
@@ -130,7 +131,8 @@ merged_data <- merged_data %>%
          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
-         cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)), 6, 0)) %>%
+         cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                          any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) %>% #HIV + opportunistic infect.
   rowwise() %>%
   mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
            cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
@@ -144,13 +146,110 @@ merged_data <- merged_data %>%
            cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
            cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
            .default = CCI_raw))
-         
+print(Sys.time())      #11 s on 1000 rows
+
+
+# Organ failure score -------------------------------------------
+## Following Dombrovskiy et al. approach from Bosch et al., (2020)."Predictive Validity"
+
+
+cvd_sofa <- c("R57", "I95.1", "I95.89", "I95.9", "R03.1", "R65.21", "I46.9")
+resp_sofa <- c("J96.0", "J96.9", "J80", "R06.00", "R06.03", "R06.09",
+               "R06.3", "R06.83", "R06.89", "R09.2")
+neuro_sofa <- c("F05", "G93.1", "G93.40", "R40.1", "R40.2")
+hema_sofa <- c("D65", "D68.8", "D68.9", "D69.59", "D69.6")
+hepatic_sofa <- c("K72.00", "K72.01", "K72.91", "K76.2", "K76.3")
+renal_sofa <- c("N17")
+
+data <- data %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
 
 
 
+# Another method for CCI that's not working yet ---------------------------
+## IGNORE ALL CODE BELOW THIS LINE IT DOESN'T WORK
+## FIX: trying to make the CCI faster
 
+#function to generate the CC, row by row 
+create_CCI_fn <- function(row){
+  
+  row$cond_1 <- ifelse(any(str_detect(row$diagnoses_all, MI_codes)), 1, 0)
+  
+  row$cond_2 <- ifelse(any(str_detect(row$diagnoses_all, congestive_heart_codes)), 1, 0)
+  
+  row$cond_3 <- ifelse(any(str_detect(row$diagnoses_all,peripheral_vascular_codes)), 1, 0)
+  
+  row$cond_4 <- ifelse(any(str_detect(row$diagnoses_all,cerebrovascular_disease_codes)), 1, 0)
+  
+  row$cond_5 <- ifelse(any(str_detect(row$diagnoses_all,dementia_codes)), 1, 0)
+  
+  row$cond_6 <- ifelse(any(str_detect(row$diagnoses_all,chronic_pulmonary_codes)), 1, 0)
+  
+  row$cond_7 <- ifelse(any(str_detect(row$diagnoses_all,rheumatic_disease_codes)), 1, 0)
+  
+  row$cond_8 <- ifelse(any(str_detect(row$diagnoses_all,peptic_ulcer_codes)), 1, 0)
+  
+  row$cond_9 <- ifelse(any(str_detect(row$diagnoses_all,mild_liver_codes)), 1, 0)
+  
+  row$cond_10 <- ifelse(any(str_detect(row$diagnoses_all, diabetes_wo_complications_codes)), 1, 0)
+  
+  row$cond_11 <- ifelse(any(str_detect(row$diagnoses_all,renal_mildmoderate_codes)), 1, 0)
+           
+  row$cond_12 <- ifelse(any(str_detect(row$diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0)
+  
+  row$cond_13 <- ifelse(any(str_detect(row$diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0)
+  
+  row$cond_14 <- ifelse(any(str_detect(row$diagnoses_all,Any_Malignancy_except_skin)), 2, 0)
+  
+  row$cond_15 <- ifelse(any(str_detect(row$diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0)
+  
+  row$cond_16 <- ifelse(any(str_detect(row$diagnoses_all,Renal_Severe)), 3, 0)
+  
+  row$cond_17 <- ifelse(any(str_detect(row$diagnoses_all,HIV_Infection)), 3, 0)
+  
+  row$cond_18 <- ifelse(any(str_detect(row$diagnoses_all,Metastatic_Solid_Tumor)), 6, 0)
+ 
+  row$cond_19 <- ifelse(any(str_detect(row$diagnoses_all,AIDS_codes)) &
+                             any(str_detect(row$diagnoses_all,HIV_Infection)), 6, 0)
 
+  
+  row$CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
+                cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
+                cond_15 + cond_16 + cond_17 + cond_18 + cond_19
+    
+  #deal with hierarchy rules by subtracting score of lower-order condition
+  row <-  row %>% mutate(CCI = case_when(
+    cond_13 != 0 & cond_4 != 0 ~ CCI_raw - 1, #cond. 13 trumps cond.4
+    cond_15 != 0 & cond_9 != 0 ~ CCI_raw - 1, #cond. 15 trumps cond. 9
+    cond_12 != 0 & cond_10 != 0 ~ CCI_raw - 1,
+    cond_16 != 0 & cond_11 != 0 ~ CCI_raw - 1,
+    cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
+    cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
+   .default = CCI_raw))
+  
+  return(row)
+  
+}
 
+print(Sys.time())
+#split the data into a list of rows 
+data_ls <- split(data_test, f = ~ pat_key)
+
+#apply function to each row simultaneous using lapply
+## FIX:: need to be able to index row by row and not a list containing a row 
+data_ls_cci <- lapply(X = list(1:length(data_ls)), 
+                      function(x){create_CCI_fn(data_ls[[x]])} )
+
+merged_data2 <- do.call(rbind, data_ls_cci)
+print(Sys.time())
 
 
 
