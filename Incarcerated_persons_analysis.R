@@ -95,31 +95,31 @@ incarcerated_data <- merged_data %>%
   filter(prov_id %in% incarcerated_count)
 
 
-
+#line 99-123, section by section
 #--------Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients ----------------
-RF_data <- incarcerated_data %>%
-  filter(ARDS == 1 | acute_RF ==1)
+#RF_data <- incarcerated_data %>%
+#  filter(ARDS == 1 | acute_RF ==1)
 
 
-RF_data <-subset(RF_data, i_o_ind =="O")
+#RF_data <-subset(RF_data, i_o_ind =="O")
 
 #-------------DROP Outpatient Patients in RF_Data---RF_data1---------
-RF_data1 <- incarcerated_data %>%
-  filter(ARDS == 1 | acute_RF ==1)
-RF_data1 <-subset(RF_data1, i_o_ind !="O")
+#RF_data1 <- incarcerated_data %>%
+#  filter(ARDS == 1 | acute_RF ==1)
+#RF_data1 <-subset(RF_data1, i_o_ind !="O")
 
-RF_data1 <- RF_data1 %>%
-  filter(gender != "U", #dropped 239 observations from gender, which were all from D_prisoner=0 category!!
-         race_ethnicity != "Unknown") #dropped 39,401 obs from race_ethnicity; 39,312 from D_prisoner=0 & 89 from D_prisoner=1
-RF_data_complete <- na.omit(RF_data1)
+#RF_data1 <- RF_data1 %>%
+#  filter(gender != "U", #dropped 239 observations from gender, which were all from D_prisoner=0 category!!
+#         race_ethnicity != "Unknown") #dropped 39,401 obs from race_ethnicity; 39,312 from D_prisoner=0 & 89 from D_prisoner=1
+#RF_data_complete <- na.omit(RF_data1)
 
 
 #------#Psych Patients in RF_Data---psy------
-RF_datapsy <- incarcerated_data %>%
-  filter(ARDS == 1 | acute_RF ==1)
+#RF_datapsy <- incarcerated_data %>%
+#  filter(ARDS == 1 | acute_RF ==1)
 #------------------Subset to only Psy patients
-RF_datapsy <-subset(RF_datapsy, pat_type == "24")
-length(unique(RF_datapsy$pat_key))
+#RF_datapsy <-subset(RF_datapsy, pat_type == "24")
+#length(unique(RF_datapsy$pat_key))
 
 #--------------drop both outpatients and psych patients----RF_datafinal------
 RF_datafinal <- incarcerated_data %>%
@@ -132,37 +132,30 @@ length(unique(RF_datafinal$pat_key))
 RF_datafinal <-subset(RF_datafinal, pat_type != "24")
 length(unique(RF_datafinal$pat_key))
 
+#-----drop "unknown" category  for gender as missing ----------------
 RF_datafinal <- RF_datafinal %>%
   filter(gender != "U", 
          race_ethnicity != "Unknown") 
-RF_data_finalcomplete <- na.omit(RF_datafinal)
+
+#----------------Complete Case analysis-------------------RF_data_complete
+RF_data_complete <- na.omit(RF_datafinal)
 length(unique(RF_data_finalcomplete$pat_key))
+
+
+#Sample size of complete cases
+length(unique(RF_data_complete$pat_key)) ##Total
+table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners in complete case sample
 
 
 #---------------------sample size ----------------
 #sample sizes
 length(unique(merged_data$pat_key)) #total sample size in full dataset
 length(unique(incarcerated_data$pat_key)) #sample size in data w/ only hospitals that have at least 1 D_prisoner included
-length(unique(RF_data$pat_key)) #total sample size in data with only D_prisoner hospistals and J80/J96.0 pts
+length(unique(RF_data_complete$pat_key)) #total sample size in data with only D_prisoner hospistals and J80/J96.0 pts
 
 #Sample size - incarcerated vs non-incarcerated
-table(RF_data$D_prisoner)
+table(RF_data_complete$D_prisoner)
 
-
-
-#-----drop "unknown" category  for gender as missing ----------------
-RF_data <- RF_data %>%
-  filter(gender != "U", #dropped 239 observations from gender, which were all from D_prisoner=0 category!!
-         race_ethnicity != "Unknown") #dropped 39,401 obs from race_ethnicity; 39,312 from D_prisoner=0 & 89 from D_prisoner=1
-
-
-#----------------Complete Case analysis--------------------
-RF_data_complete <- na.omit(RF_data)
-print(RF_data_complete)
-
-#Sample size of complete cases
-length(unique(RF_data_complete$pat_key)) ##Total
-table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners in complete case sample
 
 #Comparing dropped cases to included cases to ensure no significant differences
   ##Extracting dropped cases from complete cases analysis
