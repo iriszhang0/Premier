@@ -34,7 +34,11 @@ for (f in dta_files){ #loop through the list of files
   
   print("filtering for pat billing code")
   
+<<<<<<< Updated upstream
   temp2 <- temp %>% filter(STD_CHG_CODE == "[]") #as numeric
+=======
+  temp2 <- temp %>% filter(STD_CHG_CODE == 110229000020000)
+>>>>>>> Stashed changes
   
   if (init == 1) { #first file
     data <- temp2

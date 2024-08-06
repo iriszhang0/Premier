@@ -121,6 +121,10 @@ merged_data$insurance <- factor(merged_data$insurance,
                                            "other"))
 
 
+## Dropping outpatient visits
+merged_data <- merged_data %>%
+  filter(i_o_ind != "O")
+
 ## invasive mechanical ventilator coding, recreated from M. Ghous's code --------------
 
 # 1.import ICD PROC Files
