@@ -81,26 +81,23 @@ merged_data <- merged_data %>%
          E66.3 = if_else(stringr::str_detect(diagnoses_all, "E66.3"), 1, 0),
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
-
-
 #-------------Data restricted for hospitals with at least one patient identified as incarcerated ----------------
-  ##Getting unique prov_id for hospitals with prisoners (D_prisoner = 1)
+##Getting unique prov_id for hospitals with prisoners (D_prisoner = 1)
 incarcerated_count <- merged_data %>%
   filter(D_prisoner == 1) %>%
   pull(prov_id) %>%
   unique()
 
-  ##Subsetting merged_data to include only hospitals with prisoners
+##Subsetting merged_data to include only hospitals with prisoners
 incarcerated_data <- merged_data %>%
   filter(prov_id %in% incarcerated_count)
 
 
-#line 99-123, section by section
-#--------Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients ----------------
+
+#--------Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients -----RF_data----------------
 #RF_data <- incarcerated_data %>%
 #  filter(ARDS == 1 | acute_RF ==1)
-
-
+#------------------Subset to only Outpatients
 #RF_data <-subset(RF_data, i_o_ind =="O")
 
 #-------------DROP Outpatient Patients in RF_Data---RF_data1---------
@@ -137,14 +134,9 @@ RF_datafinal <- RF_datafinal %>%
   filter(gender != "U", 
          race_ethnicity != "Unknown") 
 
-#----------------Complete Case analysis-------------------RF_data_complete
+#----------------Complete Case analysis-------------------RF_data_finalcomplete-
 RF_data_complete <- na.omit(RF_datafinal)
 length(unique(RF_data_complete$pat_key))
-
-
-#Sample size of the complete case analysis-----
-length(unique(RF_data_complete$pat_key)) ##Total
-table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners in complete case sample
 
 
 #---------------------sample size ----------------
@@ -157,8 +149,12 @@ length(unique(RF_data_complete$pat_key)) #total sample size in data with only D_
 table(RF_data_complete$D_prisoner)
 
 
+#Sample size of complete cases
+length(unique(RF_data_complete$pat_key)) ##Total
+table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners in complete case sample
+
 #Comparing dropped cases to included cases to ensure no significant differences
-  ##Extracting dropped cases from complete cases analysis
+##Extracting dropped cases from complete cases analysis
 #dropped_cases <- RF_data[!rownames(RF_data) %in% rownames(RF_data_complete), ]
 
 # Descriptive statistics for numeric variables (e.g., age)
@@ -217,7 +213,6 @@ table(RF_data_complete$apr_sev, RF_data_complete$D_prisoner)/length(RF_data_comp
 
 table(RF_data_complete$apr_sev)  #Severity of Illness totals
 table(RF_data_complete$apr_sev)/length(RF_data_complete$pat_key) #total proportions for Severity of Illness
-
 
 ##age
 by(RF_data_complete$age, RF_data_complete$D_prisoner, summary)  #Min, max, median, mean 
@@ -302,11 +297,11 @@ cat("95% Confidence Interval for gender: [", lower_ci_gender, ", ", upper_ci_gen
 ##Combining categories into "Not Extreme" and "Extreme" d/t small sample sizes for multiple in D_prisoner=1)
 RF_data_complete <- RF_data_complete %>%
   mutate(sev_ill = recode(apr_sev, 
-                                 '0' = "Not_Extreme",
-                                 '1' = "Not_Extreme",
-                                 '2' = "Not_Extreme",
-                                 '3' = "Not_Extreme",
-                                 '4' = "Extreme"))
+                          '0' = "Not_Extreme",
+                          '1' = "Not_Extreme",
+                          '2' = "Not_Extreme",
+                          '3' = "Not_Extreme",
+                          '4' = "Extreme"))
 # Convert sev_ill to factor
 RF_data_complete$sev_ill <- factor(RF_data_complete$sev_ill)
 # Re-level sev_ill with Not Extreme as the reference category
@@ -394,7 +389,7 @@ icc_hand
 ## Unadjusted Model for death, clustering by hospital
 print(Sys.time())
 mod0 <- glmer(death ~ D_prisoner + (1 | prov_id), 
-            data = RF_data_complete, family = binomial)
+              data = RF_data_complete, family = binomial)
 print(Sys.time()) #approx 6-8 mins to run
 summary(mod0)
 se_0 <- sqrt(diag(vcov(mod0)))
@@ -410,7 +405,7 @@ performance::icc(mod0)
 ##Adjusted Model for death, clustering by hospital ---------------------------
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + sev_ill + (1 | prov_id), 
-            data = RF_data_complete, family = binomial)
+              data = RF_data_complete, family = binomial)
 print(Sys.time()) #approx 25 mins to run
 summary(mod1)
 
@@ -423,6 +418,7 @@ exp(tab_1)
 
 # Add ICC for adjusted model
 performance::icc(mod1)
+
 
 
 #Adding CCI to RF_data_complete----------------------------------------------------------------------------------
@@ -520,44 +516,44 @@ AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
                 "A15", "A16", "A17", "A18", "A19", "B59", "Z87.01",
                 "A81.2", "A02.1", "B58", "R64")
 
-#Create CCI score------------------------------------------------
+
+#Create CCI score----------------------------------------------------------------------------
 print(Sys.time())
 RF_data_complete <- RF_data_complete %>%
   rowwise() %>%
-  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0))
-         
-RF_data_complete <- RF_data_complete %>%
-  rowwise() %>%
-  mutate(cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
-         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0))
-
-RF_data_complete <- RF_data_complete %>%
-  rowwise() %>%
-  mutate(cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
+         cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
+         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
+         cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
          cond_5 = if_else(any(str_detect(diagnoses_all,dementia_codes)), 1, 0),
-         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0))
-
-RF_data_complete <- RF_data_complete %>%
-  rowwise() %>%
-  mutate(cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
+         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0),
+         cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
          cond_8 = if_else(any(str_detect(diagnoses_all,peptic_ulcer_codes)), 1, 0),
-         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
-         cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0))
-         
+         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0))
 
 RF_data_complete <- RF_data_complete %>%
   rowwise() %>%
-  mutate (cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0),
-          cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
+  mutate(cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
+         cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0))
+
+RF_data_complete <- RF_data_complete %>%
+  rowwise() %>%
+  mutate (cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
           cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
-          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
-          cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
+          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0))
+
+RF_data_complete <- RF_data_complete %>%
+  rowwise() %>%
+  mutate (cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
           cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
-          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
-          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
+          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0))
+
+RF_data_complete <- RF_data_complete %>%
+  rowwise() %>%
+  mutate (cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
           cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
-                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) %>% #HIV + opportunistic infect.
-  
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))  #HIV + opportunistic infect.
+
 RF_data_complete <- RF_data_complete %>%  
   rowwise() %>%
   mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
@@ -574,5 +570,81 @@ RF_data_complete <- RF_data_complete %>%
            .default = CCI_raw))
 print(Sys.time())
 
+
+#Add Organ failure score ------------------------------------------------------------------------------
+
+cvd_sofa <- c("R57", "I95.1", "I95.89", "I95.9", "R03.1", "R65.21", "I46.9")
+resp_sofa <- c("J96.0", "J96.9", "J80", "R06.00", "R06.03", "R06.09",
+               "R06.3", "R06.83", "R06.89", "R09.2")
+neuro_sofa <- c("F05", "G93.1", "G93.40", "R40.1", "R40.2")
+hema_sofa <- c("D65", "D68.8", "D68.9", "D69.59", "D69.6")
+hepatic_sofa <- c("K72.00", "K72.01", "K72.91", "K76.2", "K76.3")
+renal_sofa <- c("N17")
+
+RF_data_complete <- RF_data_complete %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
+
+
+#------------------------------Mixed Effects Models------------------------------------
+##Adjusted Model for death with CCI, clustering by hospital ---------------------------
+
+
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_complete, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+##Adjusted Model for death with CCI and Organ failure, clustering by hospital ---------------------------
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_complete, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+##Adjusted Model for death with organ failure only, clustering by hospital ---------------------------
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_complete, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
 
 
