@@ -1,4 +1,4 @@
-# load and merge data ----------------------
+#------------------------------load and merge data ----------------------
 
 setwd("/scratch/Premier/Raw_Data")
 
@@ -35,7 +35,7 @@ print("merging")
 merged_data <- left_join(merged_data, all_aprdrg, by = "pat_key")
 print(Sys.time())
 
-#------------------create respiratory and prisoner variables and covariates -------------------------
+#------------------------------create respiratory and prisoner variables and covariates -------------------------
 
 print("creating ARDS")
 merged_data <- merged_data %>%
@@ -81,7 +81,7 @@ merged_data <- merged_data %>%
          E66.3 = if_else(stringr::str_detect(diagnoses_all, "E66.3"), 1, 0),
          obesity = if_else((E66 == 1) & (E66.3 == 0), 1, 0)) #obesity for any E66 diagnosis except E66.3
 
-#-------------Data restricted for hospitals with at least one patient identified as incarcerated ----------------
+#------------------------------Data restricted for hospitals with at least one patient identified as incarcerated ----------------
 ##Getting unique prov_id for hospitals with prisoners (D_prisoner = 1)
 incarcerated_count <- merged_data %>%
   filter(D_prisoner == 1) %>%
@@ -94,31 +94,29 @@ incarcerated_data <- merged_data %>%
 
 
 
-#--------Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients -----RF_data----------------
+#Filtering prisoner data to include just respiratory failure (J80 and J96.0) patients------
 #RF_data <- incarcerated_data %>%
 #  filter(ARDS == 1 | acute_RF ==1)
-#------------------Subset to only Outpatients
+#Subset of only Outpatients---------
 #RF_data <-subset(RF_data, i_o_ind =="O")
 
-#-------------DROP Outpatient Patients in RF_Data---RF_data1---------
+#Filtered of only Outpatients, unknown, and duplicates -----------
 #RF_data1 <- incarcerated_data %>%
 #  filter(ARDS == 1 | acute_RF ==1)
 #RF_data1 <-subset(RF_data1, i_o_ind !="O")
-
 #RF_data1 <- RF_data1 %>%
 #  filter(gender != "U", #dropped 239 observations from gender, which were all from D_prisoner=0 category!!
 #         race_ethnicity != "Unknown") #dropped 39,401 obs from race_ethnicity; 39,312 from D_prisoner=0 & 89 from D_prisoner=1
 #RF_data_complete <- na.omit(RF_data1)
 
 
-#------#Psych Patients in RF_Data---psy------
+#Subset of only Psy patients----------------
 #RF_datapsy <- incarcerated_data %>%
 #  filter(ARDS == 1 | acute_RF ==1)
-#------------------Subset to only Psy patients
 #RF_datapsy <-subset(RF_datapsy, pat_type == "24")
 #length(unique(RF_datapsy$pat_key))
 
-#--------------drop both outpatients and psych patients----RF_datafinal------
+#------------------------------drop both outpatients and psych patients----RF_datafinal------
 RF_datafinal <- incarcerated_data %>%
   filter(ARDS == 1 | acute_RF ==1)
 length(unique(RF_datafinal$pat_key))
@@ -129,17 +127,17 @@ length(unique(RF_datafinal$pat_key))
 RF_datafinal <-subset(RF_datafinal, pat_type != "24")
 length(unique(RF_datafinal$pat_key))
 
-#-----drop "unknown" category  for gender as missing ----------------
+#------------------------------drop "unknown" category  for gender as missing ----------------
 RF_datafinal <- RF_datafinal %>%
   filter(gender != "U", 
          race_ethnicity != "Unknown") 
 
-#----------------Complete Case analysis-------------------RF_data_finalcomplete-
+#------------------------------Complete Case analysis--------------------
 RF_data_complete <- na.omit(RF_datafinal)
 length(unique(RF_data_complete$pat_key))
 
 
-#---------------------sample size ----------------
+#------------------------------sample size ----------------
 #sample sizes
 length(unique(merged_data$pat_key)) #total sample size in full dataset
 length(unique(incarcerated_data$pat_key)) #sample size in data w/ only hospitals that have at least 1 D_prisoner included
@@ -175,7 +173,7 @@ table(RF_data_complete$D_prisoner)  #Assessing # of prisoners and non-prisoners 
 #table(dropped_cases$apr_sev)
 
 
-#-------------Table 1: Descriptive Statistics in complete cases dataset (D_prisoner=1 vs D_prisoner=0)----------------
+#------------------------------Table 1: Descriptive Statistics in complete cases dataset (D_prisoner=1 vs D_prisoner=0)----------------
 ##Outcome: disposition at discharge (alive vs dead)
 table(RF_data_complete$death, RF_data_complete$D_prisoner) #Death (N) by D_prisoner
 table(RF_data_complete$death, RF_data_complete$D_prisoner)/length(RF_data_complete$pat_key) #Proportion of death (%) by D_prisoner
@@ -234,7 +232,7 @@ sd(RF_data_complete$los, na.rm = TRUE)
 sum(is.na(RF_data_complete$los))  ##No missing data
 
 
-#-----------------------------Bivariate association Table 2------------------------
+#------------------------------Table 2: Bivariate association------------------------
 chisq.test(RF_data_complete$death, RF_data_complete$D_prisoner) #death
 chisq.test(RF_data_complete$race_ethnicity, RF_data_complete$D_prisoner) #race_ethnicity
 chisq.test(RF_data_complete$gender, RF_data_complete$D_prisoner) #gender
@@ -244,7 +242,7 @@ t.test(filter(RF_data_complete, D_prisoner == 1)$age, filter(RF_data_complete, D
 t.test(filter(RF_data_complete, D_prisoner == 1)$los, filter(RF_data_complete, D_prisoner == 0)$los) #length of stay
 
 
-###Running simple logistic regression for variables----------------
+#------------------------------Running simple logistic regression for variables----------------
 ##Race/ethnicity
 # Convert race_ethnicity to factor
 RF_data_complete$race_ethnicity <- factor(RF_data_complete$race_ethnicity)
@@ -365,7 +363,7 @@ cat("95% Confidence Interval for Death: [", lower_ci_death, ", ", upper_ci_death
 
 #------------------------------Mixed Effects Models----------------------------
 library(lme4) 
-## Null Model --------------
+## Null Model
 m_null <- glmer(death ~ 1 + (1 | prov_id),
                 data = RF_data_complete, family = binomial)
 summary(m_null)
@@ -402,7 +400,7 @@ exp(tab_0)
 performance::icc(mod0)
 
 
-##Adjusted Model for death, clustering by hospital ---------------------------
+#Adjusted Model for death, clustering by hospital 
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + sev_ill + (1 | prov_id), 
               data = RF_data_complete, family = binomial)
@@ -421,7 +419,7 @@ performance::icc(mod1)
 
 
 
-#Adding CCI to RF_data_complete----------------------------------------------------------------------------------
+#------------------------------Adding CCI to RF_data_complete----------------------------------------------------------------------------------
 library(haven)
 library(dplyr)
 library(tidyr)
@@ -429,7 +427,6 @@ library(lme4)
 library(performance)
 library(stringr)
 
-# Add CCI -------------
 MI_codes <- c("I21", "I22", "I25.2")
 
 congestive_heart_codes <- c("I11.0", "I13.0", "I13.2", "I25.5",
@@ -517,7 +514,8 @@ AIDS_codes <- c("B37", "C53","B38", "B45", "A07.2", "B25", "G93.4",
                 "A81.2", "A02.1", "B58", "R64")
 
 
-#Create CCI score----------------------------------------------------------------------------
+# CCI score
+
 print(Sys.time())
 RF_data_complete <- RF_data_complete %>%
   rowwise() %>%
@@ -571,7 +569,7 @@ RF_data_complete <- RF_data_complete %>%
 print(Sys.time())
 
 
-#Add Organ failure score ------------------------------------------------------------------------------
+#------------------------------Adding OF to RF_data_complete------------------------------------------------------------------------------
 
 cvd_sofa <- c("R57", "I95.1", "I95.89", "I95.9", "R03.1", "R65.21", "I46.9")
 resp_sofa <- c("J96.0", "J96.9", "J80", "R06.00", "R06.03", "R06.09",
@@ -593,9 +591,9 @@ RF_data_complete <- RF_data_complete %>%
            hema_score + hepatic_score + renal_score)
 
 
-#------------------------------Mixed Effects Models------------------------------------
-##Adjusted Model for death with CCI, clustering by hospital ---------------------------
+#------------------------------Nested Mixed Effects Models for RF_data_complete (adjusted by CCI and OF)------------------------------------
 
+##Adjusted Model for death with CCI, clustering by hospital 
 
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + CCI + (1 | prov_id), 
@@ -613,7 +611,7 @@ exp(tab_1)
 # Add ICC for adjusted model
 performance::icc(mod1)
 
-##Adjusted Model for death with CCI and Organ failure, clustering by hospital ---------------------------
+##Adjusted Model for death with CCI and Organ failure, clustering by hospital
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + CCI + organ_failure + (1 | prov_id), 
               data = RF_data_complete, family = binomial)
@@ -630,10 +628,537 @@ exp(tab_1)
 # Add ICC for adjusted model
 performance::icc(mod1)
 
-##Adjusted Model for death with organ failure only, clustering by hospital ---------------------------
+#Adjusted Model for death with organ failure only, clustering by hospital 
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + race_ethnicity + age + gender + organ_failure + (1 | prov_id), 
               data = RF_data_complete, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+
+
+
+
+
+#------------------------------Subsetting my race_ethnicity------------------------------
+RF_data_Hispanic <-subset(RF_data_complete, race_ethnicity == "Hispanic")
+length(unique(RF_data_Hispanic$pat_key))
+
+RF_data_nonHispanicBlack <-subset(RF_data_complete, race_ethnicity == "nonHispanic_Black")
+length(unique(RF_data_nonHispanicBlack$pat_key))
+
+RF_data_nonHispanicWhite <-subset(RF_data_complete, race_ethnicity == "nonHispanic_White")
+length(unique(RF_data_nonHispanicWhite$pat_key))
+
+RF_data_nonHispanicOther <-subset(RF_data_complete, race_ethnicity == "nonHispanic_Other")
+length(unique(RF_data_nonHispanicOther$pat_key))
+
+#Adding CCI and OF to each subset
+# CCI score
+#Hispanic
+print(Sys.time())
+RF_data_Hispanic <- RF_data_Hispanic %>%
+  rowwise() %>%
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
+         cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
+         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
+         cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
+         cond_5 = if_else(any(str_detect(diagnoses_all,dementia_codes)), 1, 0),
+         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0),
+         cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
+         cond_8 = if_else(any(str_detect(diagnoses_all,peptic_ulcer_codes)), 1, 0),
+         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
+         cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
+         cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0))
+
+RF_data_Hispanic <- RF_data_Hispanic %>%
+  rowwise() %>%
+  mutate (cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
+          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
+          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
+          cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
+          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
+          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
+          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
+          cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))  #HIV + opportunistic infect.
+
+RF_data_Hispanic <- RF_data_Hispanic %>%  
+  rowwise() %>%
+  mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
+           cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
+           cond_15 + cond_16 + cond_17 + cond_18 + cond_19,
+         #deal with hierarchy rules by subtracting score of lower-order condition
+         CCI = case_when(
+           cond_13 != 0 & cond_4 != 0 ~ CCI_raw - 1, #cond. 13 trumps cond.4
+           cond_15 != 0 & cond_9 != 0 ~ CCI_raw - 1, #cond. 15 trumps cond. 9
+           cond_12 != 0 & cond_10 != 0 ~ CCI_raw - 1,
+           cond_16 != 0 & cond_11 != 0 ~ CCI_raw - 1,
+           cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
+           cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
+           .default = CCI_raw))
+print(Sys.time())
+
+#OF
+RF_data_Hispanic <- RF_data_Hispanic %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
+
+#nonHispanic_Black
+print(Sys.time())
+RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%
+  rowwise() %>%
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
+         cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
+         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
+         cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
+         cond_5 = if_else(any(str_detect(diagnoses_all,dementia_codes)), 1, 0),
+         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0),
+         cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
+         cond_8 = if_else(any(str_detect(diagnoses_all,peptic_ulcer_codes)), 1, 0),
+         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
+         cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
+         cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0))
+
+RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%
+  rowwise() %>%
+  mutate (cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
+          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
+          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
+          cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
+          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
+          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
+          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
+          cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))  #HIV + opportunistic infect.
+
+RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%  
+  rowwise() %>%
+  mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
+           cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
+           cond_15 + cond_16 + cond_17 + cond_18 + cond_19,
+         #deal with hierarchy rules by subtracting score of lower-order condition
+         CCI = case_when(
+           cond_13 != 0 & cond_4 != 0 ~ CCI_raw - 1, #cond. 13 trumps cond.4
+           cond_15 != 0 & cond_9 != 0 ~ CCI_raw - 1, #cond. 15 trumps cond. 9
+           cond_12 != 0 & cond_10 != 0 ~ CCI_raw - 1,
+           cond_16 != 0 & cond_11 != 0 ~ CCI_raw - 1,
+           cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
+           cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
+           .default = CCI_raw))
+print(Sys.time())
+
+#OF
+RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
+
+
+#nonHispanic_White
+print(Sys.time())
+RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%
+  rowwise() %>%
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
+         cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
+         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
+         cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
+         cond_5 = if_else(any(str_detect(diagnoses_all,dementia_codes)), 1, 0),
+         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0),
+         cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
+         cond_8 = if_else(any(str_detect(diagnoses_all,peptic_ulcer_codes)), 1, 0),
+         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
+         cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
+         cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0))
+
+RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%
+  rowwise() %>%
+  mutate (cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
+          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
+          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
+          cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
+          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
+          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
+          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
+          cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))  #HIV + opportunistic infect.
+
+RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%  
+  rowwise() %>%
+  mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
+           cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
+           cond_15 + cond_16 + cond_17 + cond_18 + cond_19,
+         #deal with hierarchy rules by subtracting score of lower-order condition
+         CCI = case_when(
+           cond_13 != 0 & cond_4 != 0 ~ CCI_raw - 1, #cond. 13 trumps cond.4
+           cond_15 != 0 & cond_9 != 0 ~ CCI_raw - 1, #cond. 15 trumps cond. 9
+           cond_12 != 0 & cond_10 != 0 ~ CCI_raw - 1,
+           cond_16 != 0 & cond_11 != 0 ~ CCI_raw - 1,
+           cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
+           cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
+           .default = CCI_raw))
+print(Sys.time())
+
+#OF
+RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
+
+
+#nonHispanic_Other
+print(Sys.time())
+RF_data_nonHispanicOther <- RF_data_nonHispanicOther %>%
+  rowwise() %>%
+  mutate(cond_1 = if_else(any(str_detect(diagnoses_all, MI_codes)), 1, 0),
+         cond_2 = if_else(any(str_detect(diagnoses_all, congestive_heart_codes)), 1, 0),
+         cond_3 = if_else(any(str_detect(diagnoses_all,peripheral_vascular_codes)), 1, 0),
+         cond_4 = if_else(any(str_detect(diagnoses_all,cerebrovascular_disease_codes)), 1, 0),
+         cond_5 = if_else(any(str_detect(diagnoses_all,dementia_codes)), 1, 0),
+         cond_6 = if_else(any(str_detect(diagnoses_all,chronic_pulmonary_codes)), 1, 0),
+         cond_7 = if_else(any(str_detect(diagnoses_all,rheumatic_disease_codes)), 1, 0),
+         cond_8 = if_else(any(str_detect(diagnoses_all,peptic_ulcer_codes)), 1, 0),
+         cond_9 = if_else(any(str_detect(diagnoses_all,mild_liver_codes)), 1, 0),
+         cond_10 = if_else(any(str_detect(diagnoses_all, diabetes_wo_complications_codes)), 1, 0),
+         cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0))
+
+RF_data_nonHispanicOther <- RF_data_nonHispanicOther %>%
+  rowwise() %>%
+  mutate (cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
+          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
+          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
+          cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
+          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
+          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
+          cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
+          cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0))  #HIV + opportunistic infect.
+
+RF_data_nonHispanicOther <- RF_data_nonHispanicOther %>%  
+  rowwise() %>%
+  mutate(CCI_raw = cond_1 + cond_2 + cond_3 + cond_4 + cond_5 + cond_6 + cond_7 +
+           cond_8 + cond_9 + cond_10 + cond_11 + cond_12 + cond_13 + cond_14 +
+           cond_15 + cond_16 + cond_17 + cond_18 + cond_19,
+         #deal with hierarchy rules by subtracting score of lower-order condition
+         CCI = case_when(
+           cond_13 != 0 & cond_4 != 0 ~ CCI_raw - 1, #cond. 13 trumps cond.4
+           cond_15 != 0 & cond_9 != 0 ~ CCI_raw - 1, #cond. 15 trumps cond. 9
+           cond_12 != 0 & cond_10 != 0 ~ CCI_raw - 1,
+           cond_16 != 0 & cond_11 != 0 ~ CCI_raw - 1,
+           cond_18 != 0 & cond_14 != 0 ~ CCI_raw - 2,
+           cond_19 != 0 & cond_17 != 0 ~ CCI_raw - 3,
+           .default = CCI_raw))
+print(Sys.time())
+
+#OF
+RF_data_nonHispanicOther <- RF_data_nonHispanicOther %>%
+  rowwise() %>%
+  mutate(cvd_score = if_else(any(str_detect(diagnoses_all, cvd_sofa)), 1, 0),
+         resp_score = if_else(any(str_detect(diagnoses_all, resp_sofa)), 1, 0),
+         neuro_score = if_else(any(str_detect(diagnoses_all, neuro_sofa)), 1, 0),
+         hema_score = if_else(any(str_detect(diagnoses_all, hema_sofa)), 1, 0),
+         hepatic_score = if_else(any(str_detect(diagnoses_all, hepatic_sofa)), 1, 0),
+         renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
+  mutate(organ_failure = cvd_score + resp_score + neuro_score + 
+           hema_score + hepatic_score + renal_score)
+
+
+#------------------------------Adjusted mixed Effects Model for Hispanic----------------------------
+library(lme4) 
+
+#Adjusted model
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
+              data = RF_data_Hispanic, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+
+#adjusted with CCI
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_Hispanic, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+
+#adjusted with OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_Hispanic, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+#adjusted with CCI and OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_Hispanic, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+#------------------------------Adjusted mixed Effects Models for nonHispanic_White----------------------------
+#Adjusted model
+
+
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
+              data = RF_data_nonHispanicWhite, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# CCI
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicWhite, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicWhite, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#CCI and OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicWhite, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+
+
+#sev_ill
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# CCI
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#CCI and OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#------------------------------Adjusted mixed Effects Models for nonHispanic_Other----------------------------
+
+#sev_ill
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
+              data = RF_data_nonHispanicOther, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# CCI
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicOther, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicOther, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#CCI and OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicOther, family = binomial)
 print(Sys.time()) #approx 25 mins to run
 summary(mod1)
 
