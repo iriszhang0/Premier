@@ -968,6 +968,73 @@ exp(tab_1)
 # Add ICC for adjusted model
 performance::icc(mod1)
 
+#------------------------------Adjusted mixed Effects Models for nonHispanic_Black----------
+
+#sev_ill
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# CCI
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+# OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#CCI and OF
+print(Sys.time())
+mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack, family = binomial)
+print(Sys.time()) #approx 25 mins to run
+summary(mod1)
+
+se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+tab_1 <- cbind(Est = fixef(mod1), 
+               LL = fixef(mod1) - 1.96 * se_1,
+               UL = fixef(mod1) + 1.96 * se_1)
+exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
 #------------------------------Adjusted mixed Effects Models for nonHispanic_White----------------------------
 #Adjusted model
 
@@ -1023,74 +1090,6 @@ performance::icc(mod1)
 print(Sys.time())
 mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
               data = RF_data_nonHispanicWhite, family = binomial)
-print(Sys.time()) #approx 25 mins to run
-summary(mod1)
-
-se_1 <- sqrt(diag(vcov(mod1)))
-# table of estimates with 95% CI
-tab_1 <- cbind(Est = fixef(mod1), 
-               LL = fixef(mod1) - 1.96 * se_1,
-               UL = fixef(mod1) + 1.96 * se_1)
-exp(tab_1)
-
-# Add ICC for adjusted model
-performance::icc(mod1)
-
-
-
-
-#sev_ill
-print(Sys.time())
-mod1 <- glmer(death ~ D_prisoner + age + gender + sev_ill + (1 | prov_id), 
-              data = RF_data_nonHispanicBlack, family = binomial)
-print(Sys.time()) #approx 25 mins to run
-summary(mod1)
-se_1 <- sqrt(diag(vcov(mod1)))
-# table of estimates with 95% CI
-tab_1 <- cbind(Est = fixef(mod1), 
-               LL = fixef(mod1) - 1.96 * se_1,
-               UL = fixef(mod1) + 1.96 * se_1)
-exp(tab_1)
-# Add ICC for adjusted model
-performance::icc(mod1)
-
-
-# CCI
-print(Sys.time())
-mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
-              data = RF_data_nonHispanicBlack, family = binomial)
-print(Sys.time()) #approx 25 mins to run
-summary(mod1)
-se_1 <- sqrt(diag(vcov(mod1)))
-# table of estimates with 95% CI
-tab_1 <- cbind(Est = fixef(mod1), 
-               LL = fixef(mod1) - 1.96 * se_1,
-               UL = fixef(mod1) + 1.96 * se_1)
-exp(tab_1)
-# Add ICC for adjusted model
-performance::icc(mod1)
-
-
-# OF
-print(Sys.time())
-mod1 <- glmer(death ~ D_prisoner + age + gender + organ_failure + (1 | prov_id), 
-              data = RF_data_nonHispanicBlack, family = binomial)
-print(Sys.time()) #approx 25 mins to run
-summary(mod1)
-se_1 <- sqrt(diag(vcov(mod1)))
-# table of estimates with 95% CI
-tab_1 <- cbind(Est = fixef(mod1), 
-               LL = fixef(mod1) - 1.96 * se_1,
-               UL = fixef(mod1) + 1.96 * se_1)
-exp(tab_1)
-# Add ICC for adjusted model
-performance::icc(mod1)
-
-
-#CCI and OF
-print(Sys.time())
-mod1 <- glmer(death ~ D_prisoner + age + gender + CCI + organ_failure + (1 | prov_id), 
-              data = RF_data_nonHispanicBlack, family = binomial)
 print(Sys.time()) #approx 25 mins to run
 summary(mod1)
 
