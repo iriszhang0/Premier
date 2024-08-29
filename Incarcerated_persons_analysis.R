@@ -665,8 +665,8 @@ RF_data_nonHispanicOther <-subset(RF_data_complete, race_ethnicity == "nonHispan
 length(unique(RF_data_nonHispanicOther$pat_key))
 
 #Adding CCI and OF to each subset
-# CCI score
-#Hispanic
+
+#Hispanic CCI
 print(Sys.time())
 RF_data_Hispanic <- RF_data_Hispanic %>%
   rowwise() %>%
@@ -722,7 +722,7 @@ RF_data_Hispanic <- RF_data_Hispanic %>%
   mutate(organ_failure = cvd_score + resp_score + neuro_score + 
            hema_score + hepatic_score + renal_score)
 
-#nonHispanic_Black
+#nonHispanic_Black CCI
 print(Sys.time())
 RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%
   rowwise() %>%
@@ -779,7 +779,7 @@ RF_data_nonHispanicBlack <- RF_data_nonHispanicBlack %>%
            hema_score + hepatic_score + renal_score)
 
 
-#nonHispanic_White
+#nonHispanic_White CCI
 print(Sys.time())
 RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%
   rowwise() %>%
@@ -836,7 +836,7 @@ RF_data_nonHispanicWhite <- RF_data_nonHispanicWhite %>%
            hema_score + hepatic_score + renal_score)
 
 
-#nonHispanic_Other
+#nonHispanic_Other CCI
 print(Sys.time())
 RF_data_nonHispanicOther <- RF_data_nonHispanicOther %>%
   rowwise() %>%
