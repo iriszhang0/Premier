@@ -191,11 +191,17 @@ merged_data <- merged_data %>%
   rowwise() %>%
   mutate (cond_11 = if_else(any(str_detect(diagnoses_all,renal_mildmoderate_codes)), 1, 0),
           cond_12 = if_else(any(str_detect(diagnoses_all,Diabetes_with_Chronic_Complications)), 2, 0),
-          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0),
-          cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
+          cond_13 = if_else(any(str_detect(diagnoses_all,Hemiplegia_or_Paraplegia)), 2, 0))
+
+merged_data <- merged_data %>%
+  rowwise() %>%
+  mutate (cond_14 = if_else(any(str_detect(diagnoses_all,Any_Malignancy_except_skin)), 2, 0),
           cond_15 = if_else(any(str_detect(diagnoses_all,Moderate_or_Severe_Liver_Disease)), 3, 0),
-          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0),
-          cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
+          cond_16 = if_else(any(str_detect(diagnoses_all,Renal_Severe)), 3, 0))
+
+merged_data <- merged_data %>%
+  rowwise() %>%
+  mutate (cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
           cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
           cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
                               any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) %>% #HIV + opportunistic infect.
