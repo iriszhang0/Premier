@@ -204,7 +204,7 @@ merged_data <- merged_data %>%
   mutate (cond_17 = if_else(any(str_detect(diagnoses_all,HIV_Infection)), 3, 0),
           cond_18 = if_else(any(str_detect(diagnoses_all,Metastatic_Solid_Tumor)), 6, 0),
           cond_19 = if_else(any(str_detect(diagnoses_all,AIDS_codes)) &
-                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) %>% #HIV + opportunistic infect.
+                              any(str_detect(diagnoses_all,HIV_Infection)), 6, 0)) #HIV + opportunistic infect.
   
 merged_data <- merged_data %>%  
   rowwise() %>%

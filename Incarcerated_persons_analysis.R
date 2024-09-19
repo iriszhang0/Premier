@@ -1172,3 +1172,282 @@ exp(tab_1)
 performance::icc(mod1)
 
 
+#-------------------------------EXPLORING ORGAN FAILURE AS OUTCOME--------------------------------------------------
+#-----------------------Descriptive Stats--------------------------------------------------------------------------
+##Organ Failure
+by(RF_data_complete$organ_failure, RF_data_complete$D_prisoner, summary)  #Min, max, median, mean 
+by(RF_data_complete$organ_failure, RF_data_complete$D_prisoner, sd)  #SD of organ failure score
+#distribution of OF score for entire sample
+summary(RF_data_complete$organ_failure) #OF score distribution
+mean(RF_data_complete$organ_failure, na.rm = TRUE)
+sd(RF_data_complete$organ_failure, na.rm = TRUE)
+sum(is.na(RF_data_complete$organ_failure))  ##No missing data
+
+#------------------------------Table 2: Bivariate association for OF------------------------
+t.test(filter(RF_data_complete, D_prisoner == 1)$organ_failure, filter(RF_data_complete, D_prisoner == 0)$organ_failure) #organ failure
+#chisq.test(RF_data_complete$organ_failure, RF_data_complete$D_prisoner) #organ failure
+chisq.test(RF_data_complete$race_ethnicity, RF_data_complete$D_prisoner) #race_ethnicity
+chisq.test(RF_data_complete$gender, RF_data_complete$D_prisoner) #gender
+chisq.test(RF_data_complete$CCI, RF_data_complete$D_prisoner) #CCI
+
+t.test(filter(RF_data_complete, D_prisoner == 1)$age, filter(RF_data_complete, D_prisoner == 0)$age) #age
+t.test(filter(RF_data_complete, D_prisoner == 1)$los, filter(RF_data_complete, D_prisoner == 0)$los) #length of stay
+
+
+#------------------------------Running simple logistic regression for variables----------------
+##Race/ethnicity
+# Convert race_ethnicity to factor
+RF_data_complete$race_ethnicity <- factor(RF_data_complete$race_ethnicity)
+# Re-level race_ethnicity with White as the reference category
+RF_data_complete$race_ethnicity <- relevel(RF_data_complete$race_ethnicity, ref = "nonHispanic_White")
+
+# Fit logistic regression model for race_ethnicity
+logmod_re <- glm(D_prisoner ~ race_ethnicity, data = RF_data_complete, family = binomial)
+summary(logmod_re)
+
+#Finding ORs and 95% CIs for race_ethnicity
+# Get the coefficients and their standard errors for each category
+coef_and_se_re <- summary(logmod_re)$coefficients[c(2:4), c("Estimate", "Std. Error", "Pr(>|z|)")]
+# Calculate odds ratios
+odds_ratios_re <- exp(coef_and_se_re[, "Estimate"])
+# Calculate lower and upper bounds of 95% confidence intervals
+lower_ci_re <- exp(coef_and_se_re[, "Estimate"] - 1.96 * coef_and_se_re[, "Std. Error"])
+upper_ci_re <- exp(coef_and_se_re[, "Estimate"] + 1.96 * coef_and_se_re[, "Std. Error"])
+# Format the output
+output_re <- data.frame(
+  OR = odds_ratios_re,
+  Lower_CI = lower_ci_re,
+  Upper_CI = upper_ci_re,
+  p_value = coef_and_se_re[, "Pr(>|z|)"]
+)
+# Print the output
+print(output_re)
+
+
+##Gender
+# Fit logistic regression model for gender
+logmod_gender <- glm(D_prisoner ~ gender, data = RF_data_complete, family = binomial)
+summary(logmod_gender)
+# Get the coefficients and their standard errors gender
+coef_and_se_gend <- summary(logmod_gender )$coefficients
+# Extract the estimate and standard error for gender
+estimate_gender <- coef_and_se_gend[2, 1]
+std_error_gender <- coef_and_se_gend[2, 2]
+# Calculate the odds ratio
+OR_gender <- exp(estimate_gender)
+# Calculate the 95% confidence interval
+lower_ci_gender <- exp(estimate_gender - 1.96 * std_error_gender)
+upper_ci_gender <- exp(estimate_gender + 1.96 * std_error_gender)
+# Print the results
+cat("Odds Ratio for gender:", OR_gender, "\n")
+cat("95% Confidence Interval for gender: [", lower_ci_gender, ", ", upper_ci_gender, "]\n")
+
+
+##Charleston Comorbidity Index
+
+# Convert sev_ill to factor
+#RF_data_complete$sev_ill <- factor(RF_data_complete$sev_ill)
+# Re-level sev_ill with Not Extreme as the reference category
+#RF_data_complete$sev_ill <- relevel(RF_data_complete$sev_ill, ref = "Not_Extreme")
+
+# Fit logistic regression model for severity of illness
+logmod_CCI <- glm(D_prisoner ~ CCI, data = RF_data_complete, family = binomial)
+summary(logmod_CCI)
+# Get the coefficients and their standard errors sev_ill
+coef_and_se_CCI <- summary(logmod_CCI)$coefficients
+# Extract the estimate and standard error for sev_ill
+estimate_CCI <- coef_and_se_CCI[2, 1]
+std_error_CCI <- coef_and_se_CCI[2, 2]
+# Calculate the odds ratio
+OR_CCI <- exp(estimate_CCI)
+# Calculate the 95% confidence interval
+lower_ci_CCI <- exp(estimate_CCI - 1.96 * std_error_CCI)
+upper_ci_CCI <- exp(estimate_CCI + 1.96 * std_error_CCI)
+# Print the results
+cat("Odds Ratio for CCI:", OR_CCI, "\n")
+cat("95% Confidence Interval for CCI: [", lower_ci_CCI, ", ", upper_ci_CCI, "]\n")
+
+
+##Age
+# Fit logistic regression model for age
+logmod_age <- glm(D_prisoner ~ age, data = RF_data_complete, family = binomial)
+summary(logmod_age)
+# Get the coefficients and their standard errors age
+coef_and_se_age <- summary(logmod_age)$coefficients
+# Extract the estimate and standard error for age
+estimate_age <- coef_and_se_age[2, 1]
+std_error_age <- coef_and_se_age[2, 2]
+# Calculate the odds ratio
+OR_age <- exp(estimate_age)
+# Calculate the 95% confidence interval
+lower_ci_age <- exp(estimate_age - 1.96 * std_error_age)
+upper_ci_age <- exp(estimate_age + 1.96 * std_error_age)
+# Print the results
+cat("Odds Ratio for age:", OR_age, "\n")
+cat("95% Confidence Interval for age: [", lower_ci_age, ", ", upper_ci_age, "]\n")
+
+
+# Fit linear regression model for Organ Failure (as outcome) with D_prisoner  **OF is a score!!!*
+mod_of <- lm(organ_failure ~ D_prisoner, data = RF_data_complete)
+summary(mod_of)
+# Get the coefficients and their standard errors D_prisoner
+coef_and_se_of <- summary(mod_of)$coefficients
+# Extract the estimate and standard error for D_prisoner
+estimate_of <- coef_and_se_of[2, 1]
+std_error_of <- coef_and_se_of[2, 2]
+# Calculate the odds ratio
+OR_of <- exp(estimate_of)
+# Calculate the 95% confidence interval
+lower_ci_of <- exp(estimate_of - 1.96 * std_error_of)
+upper_ci_of <- exp(estimate_of + 1.96 * std_error_of)
+# Print the results
+cat("Odds Ratio for Organ Failure:", OR_of, "\n")
+cat("95% Confidence Interval for Organ Failure: [", lower_ci_of, ", ", upper_ci_of, "]\n")
+
+
+#------------------------------Mixed Effects Models----------------------------
+library(lme4) 
+## Null Model
+of_null <- lmer(organ_failure ~ 1 + (1 | prov_id),
+                data = RF_data_complete)
+summary(of_null)
+
+confint(of_null)  #approx 4 min to run
+
+#se_null <- sqrt(diag(vcov(of_null)))
+# table of estimates with 95% CI
+#tab_null <- cbind(Est = fixef(of_null), 
+#                  LL = fixef(of_null) - 1.96 * se_null,
+#                  UL = fixef(of_null) + 1.96 * se_null)
+#exp(tab_null)
+
+# ICC
+# The ICC is calculated by dividing the random effect variance, σ2i, by the total variance, i.e. the sum of the random effect variance and the residual variance, σ2ε.
+# hand calculation
+sigma2_0 <- as.data.frame(VarCorr(of_null),comp="Variance")$vcov[1]
+total_var <- sigma2_0 + (pi^2)/3
+icc_hand <- sigma2_0/total_var
+icc_hand
+
+
+## Unadjusted Model for organ failure, clustering by hospital
+print(Sys.time())
+mod0 <- lmer(organ_failure ~ D_prisoner + (1 | prov_id), 
+              data = RF_data_complete)
+print(Sys.time()) #approx 30 sec to run
+summary(mod0)
+
+confint(mod0) #approx 6-7 min to run
+
+
+#se_0 <- sqrt(diag(vcov(mod0)))
+# table of estimates with 95% CI
+#tab_0 <- cbind(Est = fixef(mod0), 
+#               LL = fixef(mod0) - 1.96 * se_0,
+#               UL = fixef(mod0) + 1.96 * se_0)
+#exp(tab_0)
+
+performance::icc(mod0)
+
+
+#Adjusted Model for organ failure, clustering by hospital 
+print(Sys.time())
+mod1 <- lmer(organ_failure ~ D_prisoner + race_ethnicity + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_complete)
+print(Sys.time()) #approx 30 sec to run
+summary(mod1)
+
+confint(mod1) #approx 30 min to run
+
+#se_1 <- sqrt(diag(vcov(mod1)))
+# table of estimates with 95% CI
+#tab_1 <- cbind(Est = fixef(mod1), 
+#               LL = fixef(mod1) - 1.96 * se_1,
+#               UL = fixef(mod1) + 1.96 * se_1)
+#exp(tab_1)
+
+# Add ICC for adjusted model
+performance::icc(mod1)
+
+
+#------------------------------Subset data by race_ethnicity------------------------------
+RF_data_Hispanic <-subset(RF_data_complete, race_ethnicity == "Hispanic")
+length(unique(RF_data_Hispanic$pat_key))
+
+RF_data_nonHispanicBlack <-subset(RF_data_complete, race_ethnicity == "nonHispanic_Black")
+length(unique(RF_data_nonHispanicBlack$pat_key))
+
+RF_data_nonHispanicWhite <-subset(RF_data_complete, race_ethnicity == "nonHispanic_White")
+length(unique(RF_data_nonHispanicWhite$pat_key))
+
+RF_data_nonHispanicOther <-subset(RF_data_complete, race_ethnicity == "nonHispanic_Other")
+length(unique(RF_data_nonHispanicOther$pat_key))
+
+
+#------------------------------Adjusted mixed Effects Model for Hispanic----------------------------
+library(lme4) 
+
+#Adjusted model
+print(Sys.time())
+mod_his <- lmer(organ_failure ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_Hispanic)
+print(Sys.time()) #approx 2 mins to run
+summary(mod_his)
+
+#95% CI
+confint(mod_his)
+
+# Add ICC for adjusted model
+performance::icc(mod_his)
+
+
+#------------------------------Adjusted mixed Effects Models for nonHispanic_Black----------
+
+print(Sys.time())
+mod_nhBl <- lmer(organ_failure ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicBlack)
+print(Sys.time()) #approx 4 mins to run
+summary(mod_nhBl)
+
+#95% CI
+confint(mod_nhBl)
+
+# Add ICC for adjusted model
+performance::icc(mod_nhBl)
+
+#------------------------------Adjusted mixed Effects Models for nonHispanic_White----------------------------
+#Adjusted model
+print(Sys.time())
+mod_wh <- lmer(organ_failure ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicWhite)
+print(Sys.time()) #approx 10 mins to run
+summary(mod_wh)
+
+#95% CI
+confint(mod_wh)
+
+# Add ICC for adjusted model
+performance::icc(mod_wh)
+
+
+#------------------------------Adjusted mixed Effects Models for nonHispanic_Other----------------------------
+
+print(Sys.time())
+mod_oth <- lmer(organ_failure ~ D_prisoner + age + gender + CCI + (1 | prov_id), 
+              data = RF_data_nonHispanicOther)
+print(Sys.time()) #approx 1-2 mins to run
+summary(mod_oth)
+
+#95% CI
+confint(mod_oth)
+
+# Add ICC for adjusted model
+performance::icc(mod_oth)
+
+
+#--------------------------------Ordinal Logistic Regression Models--------------------------------------
+#Simple OLR
+mod_olr <- polr(orgran_failure ~ D_prisoner, data = RF_data_complete, HESS = TRUE)
+summary(mod_olr)
+
+
