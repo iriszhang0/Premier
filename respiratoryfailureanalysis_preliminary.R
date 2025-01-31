@@ -123,7 +123,7 @@ merged_data$insurance <- factor(merged_data$insurance,
 
 ## Dropping outpatient visits
 merged_data <- merged_data %>%
-  filter(i_o_ind !=)
+  filter(i_o_ind != "O")
 
 ## invasive mechanical ventilator coding, recreated from M. Ghous's code --------------
 
@@ -719,6 +719,144 @@ exp(tab_3b_3)
 
 # Add ICC for adjusted model
 performance::icc(m_3b_3)
+
+
+#------Rerun final model for in-hospital death only--------------------
+## adjusted + CCI + organ failure ---------------------------
+print(Sys.time())
+mod_hosp_death <- glmer(inhospital_death ~ race_ethnicity + age + gender + insurance + 
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_data, family = binomial)
+print(Sys.time()) #approx 8 mins to run
+summary(mod_hosp_death)
+
+se_hosp_death <- sqrt(diag(vcov(mod_hosp_death)))
+# table of estimates with 95% CI
+tab_hosp_death <- cbind(Est = fixef(mod_hosp_death), 
+                  LL = fixef(mod_hosp_death) - 1.96 * se_hosp_death,
+                  UL = fixef(mod_hosp_death) + 1.96 * se_hosp_death)
+exp(tab_hosp_death)
+
+
+#------STRATIFYING FINAL MODEL (adjusted+CCI+OF) BY RACE/ETHNICITY)-------------------
+
+##STEP 1: Create stratified data sets (by race/ethnicity)
+##### A) Non-Hispanic White
+ARDS_data_White <- ARDS_data %>%
+  filter(race_ethnicity == "nonHispanic_White")
+
+##### B) Non-Hispanic Black
+ARDS_data_Black <- ARDS_data %>%
+  filter(race_ethnicity == "nonHispanic_Black")
+
+##### C) Hispanic
+ARDS_data_Hisp <- ARDS_data %>%
+  filter(race_ethnicity == "Hispanic")
+
+##### D) Asian
+ARDS_data_Asian_pt <- ARDS_data %>%
+  filter(race_ethnicity == "Asian")
+
+##### E) Other
+ARDS_data_Other <- ARDS_data %>%
+  filter(race_ethnicity == "Other")
+
+
+##STEP 2: Run final model in each new race/ethnicity dataset
+##### A) Non-Hispanic White
+print(Sys.time())
+fin_mod_Wh <- glmer(death_or_hospice ~ age + gender + insurance + 
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_data_White, family = binomial)
+print(Sys.time()) #approx 2 mins to run
+summary(fin_mod_Wh)
+
+se_fin_mod_Wh <- sqrt(diag(vcov(fin_mod_Wh)))
+# table of estimates with 95% CI
+tab_fin_mod_Wh <- cbind(Est = fixef(fin_mod_Wh), 
+                  LL = fixef(fin_mod_Wh) - 1.96 * se_fin_mod_Wh,
+                  UL = fixef(fin_mod_Wh) + 1.96 * se_fin_mod_Wh)
+exp(tab_fin_mod_Wh)
+
+# Add ICC for adjusted model
+performance::icc(fin_mod_Wh)
+
+
+##### B) Non-Hispanic Black
+print(Sys.time())
+fin_mod_Bl <- glmer(death_or_hospice ~ age + gender + insurance + 
+                      CCI + organ_failure + (1 | prov_id), 
+                    data = ARDS_data_Black, family = binomial)
+print(Sys.time()) #approx 1 min to run
+summary(fin_mod_Bl)
+
+se_fin_mod_Bl <- sqrt(diag(vcov(fin_mod_Bl)))
+# table of estimates with 95% CI
+tab_fin_mod_Bl <- cbind(Est = fixef(fin_mod_Bl), 
+                        LL = fixef(fin_mod_Bl) - 1.96 * se_fin_mod_Bl,
+                        UL = fixef(fin_mod_Bl) + 1.96 * se_fin_mod_Bl)
+exp(tab_fin_mod_Bl)
+
+# Add ICC for adjusted model
+performance::icc(fin_mod_Bl)
+
+
+##### C) Hispanic
+print(Sys.time())
+fin_mod_Hisp <- glmer(death_or_hospice ~ age + gender + insurance + 
+                      CCI + organ_failure + (1 | prov_id), 
+                    data = ARDS_data_Hisp, family = binomial)
+print(Sys.time()) #approx 1 min to run
+summary(fin_mod_Hisp)
+
+se_fin_mod_Hisp <- sqrt(diag(vcov(fin_mod_Hisp)))
+# table of estimates with 95% CI
+tab_fin_mod_Hisp <- cbind(Est = fixef(fin_mod_Hisp), 
+                        LL = fixef(fin_mod_Hisp) - 1.96 * se_fin_mod_Hisp,
+                        UL = fixef(fin_mod_Hisp) + 1.96 * se_fin_mod_Hisp)
+exp(tab_fin_mod_Hisp)
+
+# Add ICC for adjusted model
+performance::icc(fin_mod_Hisp)
+
+
+##### D) Asian
+print(Sys.time())
+fin_mod_Asian <- glmer(death_or_hospice ~ age + gender + insurance + 
+                        CCI + organ_failure + (1 | prov_id), 
+                      data = ARDS_data_Asian_pt, family = binomial)
+print(Sys.time()) #approx 10 sec to run
+summary(fin_mod_Asian)
+
+se_fin_mod_Asian <- sqrt(diag(vcov(fin_mod_Asian)))
+# table of estimates with 95% CI
+tab_fin_mod_Asian <- cbind(Est = fixef(fin_mod_Asian), 
+                          LL = fixef(fin_mod_Asian) - 1.96 * se_fin_mod_Asian,
+                          UL = fixef(fin_mod_Asian) + 1.96 * se_fin_mod_Asian)
+exp(tab_fin_mod_Asian)
+
+# Add ICC for adjusted model
+performance::icc(fin_mod_Asian)
+
+
+##### E) Other
+print(Sys.time())
+fin_mod_Oth <- glmer(death_or_hospice ~ age + gender + insurance + 
+                         CCI + organ_failure + (1 | prov_id), 
+                       data = ARDS_data_Other, family = binomial)
+print(Sys.time()) #approx 30 sec to run
+summary(fin_mod_Oth)
+
+se_fin_mod_Oth <- sqrt(diag(vcov(fin_mod_Oth)))
+# table of estimates with 95% CI
+tab_fin_mod_Oth <- cbind(Est = fixef(fin_mod_Oth), 
+                           LL = fixef(fin_mod_Oth) - 1.96 * se_fin_mod_Oth,
+                           UL = fixef(fin_mod_Oth) + 1.96 * se_fin_mod_Oth)
+exp(tab_fin_mod_Oth)
+
+# Add ICC for adjusted model
+performance::icc(fin_mod_Oth)
+
 
 
 # Table 4: Models by Covid period ----------------
