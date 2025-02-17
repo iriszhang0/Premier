@@ -400,6 +400,10 @@ table(ARDS_data$death, ARDS_data$race_ethnicity)
 #death by race/ethnicity
 table(ARDS_data$death_or_hospice, ARDS_data$race_ethnicity)
 
+
+#in-hospital mortality by race/ethnicity
+table(ARDS_data$inhospital_death, ARDS_data$race_ethnicity)
+
 # Bivariate association Table 2a --------------------
 # main predictor (race)
 chisq.test(ARDS_data$death, ARDS_data$race_ethnicity) #death
@@ -1098,4 +1102,107 @@ tab_4d_3 <- cbind(Est = fixef(m_4d_3),
 exp(tab_4d_3)
 
 
+
+#--------Stratifying by COVID-19 diagnosis----------------------------------------------------
+#STEP 1: Creating COVID variable (with ICD-10 code U07.01 --> used as of April 01, 2020) 
+###and COVID_plus variable --> with U07.01 + B97.29 (Other coronavirus as the cause of diseases classified elsewhere - used pre-04/01/2020)
+print("creating COVID and COVID_plus variables")
+ARDS_data <- ARDS_data %>%
+  mutate(COVID = if_else(stringr::str_detect(diagnoses_all, "U07.1"), 1, 0),
+         oth_coron = if_else(stringr::str_detect(diagnoses_all, "B97.29"), 1, 0),
+         COVID_plus = if_else((COVID == 1) | (oth_coron == 1), 1, 0))
+
+ARDS_precovid <- ARDS_precovid %>%
+  mutate(COVID = if_else(stringr::str_detect(diagnoses_all, "U07.1"), 1, 0),
+         oth_coron = if_else(stringr::str_detect(diagnoses_all, "B97.29"), 1, 0),
+         COVID_plus = if_else((COVID == 1) | (oth_coron == 1), 1, 0))
+
+ARDS_covid <- ARDS_covid %>%
+  mutate(COVID = if_else(stringr::str_detect(diagnoses_all, "U07.1"), 1, 0),
+         oth_coron = if_else(stringr::str_detect(diagnoses_all, "B97.29"), 1, 0),
+         COVID_plus = if_else((COVID == 1) | (oth_coron == 1), 1, 0))
+
+
+##STEP 2: Create stratified data sets (by COVID)
+##### A) COVID
+ARDS_data_COVID <- ARDS_data %>%
+  filter(COVID == 1)
+
+##### B) non-COVID
+ARDS_data_non_COVID <- ARDS_data %>%
+  filter(COVID == 0)
+
+##### C) COVID_plus
+ARDS_data_COVID_plus <- ARDS_data %>%
+  filter(COVID_plus == 1)
+
+##### D) non-COVID_plus
+ARDS_data_non_COVID_plus <- ARDS_data %>%
+  filter(COVID_plus == 0)
+
+
+##STEP 3: Run stratified analyses of final model (with CCI + OF)
+##### A) COVID - adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_covid_dx <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_data_COVID, family = binomial)
+print(Sys.time()) 
+summary(mod_covid_dx) 
+
+se_mod_covid_dx <- sqrt(diag(vcov(mod_covid_dx)))
+# table of estimates with 95% CI
+tab_mod_covid_dx <- cbind(Est = fixef(mod_covid_dx), 
+                  LL = fixef(mod_covid_dx) - 1.96 * se_mod_covid_dx,
+                  UL = fixef(mod_covid_dx) + 1.96 * se_mod_covid_dx)
+exp(tab_mod_covid_dx)
+
+##### B) non-COVID - adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_no_covid_dx <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                        CCI + organ_failure + (1 | prov_id), 
+                      data = ARDS_data_non_COVID, family = binomial)
+print(Sys.time()) 
+summary(mod_no_covid_dx) 
+
+se_mod_no_covid_dx <- sqrt(diag(vcov(mod_no_covid_dx)))
+# table of estimates with 95% CI
+tab_mod_no_covid_dx <- cbind(Est = fixef(mod_no_covid_dx), 
+                          LL = fixef(mod_no_covid_dx) - 1.96 * se_mod_no_covid_dx,
+                          UL = fixef(mod_no_covid_dx) + 1.96 * se_mod_no_covid_dx)
+exp(tab_mod_no_covid_dx)
+
+##### C) COVID_plus - adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_covid_plus <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                           CCI + organ_failure + (1 | prov_id), 
+                         data = ARDS_data_COVID_plus, family = binomial)
+print(Sys.time()) 
+summary(mod_covid_plus) 
+
+se_mod_covid_plus <- sqrt(diag(vcov(mod_covid_plus)))
+# table of estimates with 95% CI
+tab_mod_covid_plus <- cbind(Est = fixef(mod_covid_plus), 
+                             LL = fixef(mod_covid_plus) - 1.96 * se_mod_covid_plus,
+                             UL = fixef(mod_covid_plus) + 1.96 * se_mod_covid_plus)
+exp(tab_mod_covid_plus)
+
+##### D) No COVID_plus - adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_no_covid_plus <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                          CCI + organ_failure + (1 | prov_id), 
+                        data = ARDS_data_non_COVID_plus, family = binomial)
+print(Sys.time()) 
+summary(mod_no_covid_plus) 
+
+se_mod_no_covid_plus <- sqrt(diag(vcov(mod_no_covid_plus)))
+# table of estimates with 95% CI
+tab_mod_no_covid_plus <- cbind(Est = fixef(mod_no_covid_plus), 
+                            LL = fixef(mod_no_covid_plus) - 1.96 * se_mod_no_covid_plus,
+                            UL = fixef(mod_no_covid_plus) + 1.96 * se_mod_no_covid_plus)
+exp(tab_mod_no_covid_plus)
 
