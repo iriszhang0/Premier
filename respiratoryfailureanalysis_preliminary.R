@@ -1206,3 +1206,25 @@ tab_mod_no_covid_plus <- cbind(Est = fixef(mod_no_covid_plus),
                             UL = fixef(mod_no_covid_plus) + 1.96 * se_mod_no_covid_plus)
 exp(tab_mod_no_covid_plus)
 
+#MORTALITY count by month----
+ARDS_data <- ARDS_data %>%				
+  mutate(				
+    disc_mon = as.numeric(disc_mon),  # Ensure it's numeric				
+    year = as.integer(substr(disc_mon, 1, 4)),  # Extract the first 4 digits as year				
+    month = as.integer(substr(disc_mon, 6, 7)))  # Extract the last 2 digits as month			
+
+summary(ARDS_data$year)				
+summary(ARDS_data$month)				
+table(ARDS_data$year)				
+table(ARDS_data$month)	
+
+deaths_per_year_month <- ARDS_data %>%                
+  filter(death == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month, n = Inf)
+
+
+    
