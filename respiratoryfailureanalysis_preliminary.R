@@ -70,7 +70,7 @@ merged_data$death_or_hospice <- ifelse(merged_data$disc_status %in%
                                          c(20, 40, 41, 42, 50, 51), 1, 0)
 
 #create in-hospital mortality
-print("creating in-hospital mortality varibale")
+print("creating in-hospital mortality variable")
 merged_data$inhospital_death <- ifelse(merged_data$disc_status == 20, 1, 0)
 
 #merge race and hispanicity
@@ -1206,25 +1206,164 @@ tab_mod_no_covid_plus <- cbind(Est = fixef(mod_no_covid_plus),
                             UL = fixef(mod_no_covid_plus) + 1.96 * se_mod_no_covid_plus)
 exp(tab_mod_no_covid_plus)
 
+
+####------------ASSESSING PATTERNS OVER TIME (and other)---------------------------------
+
 #MORTALITY count by month----
 ARDS_data <- ARDS_data %>%				
   mutate(				
-    disc_mon = as.numeric(disc_mon),  # Ensure it's numeric				
-    year = as.integer(substr(disc_mon, 1, 4)),  # Extract the first 4 digits as year				
-    month = as.integer(substr(disc_mon, 6, 7)))  # Extract the last 2 digits as month			
+    adm_mon = as.numeric(adm_mon),  # Ensure it's numeric				
+    year = as.integer(substr(adm_mon, 1, 4)),  # Extract the first 4 digits as year				
+    month = as.integer(substr(adm_mon, 6, 7)))  # Extract the last 2 digits as month			
 
 summary(ARDS_data$year)				
 summary(ARDS_data$month)				
 table(ARDS_data$year)				
-table(ARDS_data$month)	
+table(ARDS_data$year, ARDS_data$month)	
 
 deaths_per_year_month <- ARDS_data %>%                
-  filter(death == 1) %>%
+  filter(death_or_hospice == 1) %>%
   group_by(year, month) %>%             
   summarise(num_deaths = n(), .groups = "drop") %>%               
   arrange(year, month)
 
 print(deaths_per_year_month, n = Inf)
 
+
+#Mortality (death or hospice) count by month --> Stratified by race/ethnicity
+##Non-Hispanic White
+table(ARDS_data_White$year)
+table(ARDS_data_White$year, ARDS_data_White$month)
+
+deaths_per_year_month_White <- ARDS_data_White %>%                
+  filter(death_or_hospice == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_White, n = Inf)
+
+
+##Non-Hispanic Black
+table(ARDS_data_Black$year)
+table(ARDS_data_Black$year, ARDS_data_Black$month)
+
+deaths_per_year_month_Black <- ARDS_data_Black %>%                
+  filter(death_or_hospice == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_Black, n = Inf)
+
+
+##Hispanic
+table(ARDS_data_Hisp$year)
+table(ARDS_data_Hisp$year, ARDS_data_Hisp$month)
+
+deaths_per_year_month_Hisp <- ARDS_data_Hisp %>%                
+  filter(death_or_hospice == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_Hisp, n = Inf)
+
+
+##Asian
+table(ARDS_data_Asian_pt$year)
+table(ARDS_data_Asian_pt$year, ARDS_data_Asian_pt$month)
+
+deaths_per_year_month_Asian_pt <- ARDS_data_Asian_pt %>%                
+  filter(death_or_hospice == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_Asian_pt, n = Inf)
+
+
+##Other
+table(ARDS_data_Other$year)
+table(ARDS_data_Other$year, ARDS_data_Other$month)
+
+deaths_per_year_month_Other <- ARDS_data_Other %>%                
+  filter(death_or_hospice == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_Other, n = Inf)
+
+
+
+###---------MLM with fixed effect of time----------------
+##### adjusted + CCI + organ failure
+print("MLM eith FE for time; adjusted + CCI + organ failure")
+print(Sys.time())
+mod_mlm_time_fe <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                          CCI + organ_failure + adm_mon + (1 | prov_id), 
+                        data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_mlm_time_fe) 
+
+se_mod_mlm_time_fe <- sqrt(diag(vcov(mod_mlm_time_fe)))
+# table of estimates with 95% CI
+tab_mod_mlm_time_fe <- cbind(Est = fixef(mod_mlm_time_fe), 
+                            LL = fixef(mod_mlm_time_fe) - 1.96 * se_mod_mlm_time_fe,
+                            UL = fixef(mod_mlm_time_fe) + 1.96 * se_mod_mlm_time_fe)
+exp(tab_mod_mlm_time_fe)
+
+###---------MLM with random slope for time----------------
+##### adjusted + CCI + organ failure
+print("MLM with RS for time; adjusted + CCI + organ failure")
+print(Sys.time())
+mod_mlm_time_rs <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                           CCI + organ_failure + adm_mon + (adm_mon | prov_id), 
+                         data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_mlm_time_rs) 
+
+se_mod_mlm_time_rs <- sqrt(diag(vcov(mod_mlm_time_rs)))
+# table of estimates with 95% CI
+tab_mod_mlm_time_rs <- cbind(Est = fixef(mod_mlm_time_rs), 
+                             LL = fixef(mod_mlm_time_rs) - 1.96 * se_mod_mlm_time_rs,
+                             UL = fixef(mod_mlm_time_rs) + 1.96 * se_mod_mlm_time_rs)
+exp(tab_mod_mlm_time_rs)
+
+###---------MLM with random slope for time while still clustering for hospital----------------
+##### adjusted + CCI + organ failure
+print("MLM with RS for time; adjusted + CCI + organ failure")
+print(Sys.time())
+mod_mlm_time_rs2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                           CCI + organ_failure + adm_mon + (1 | prov_id) + (adm_mon | prov_id), 
+                         data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_mlm_time_rs2) 
+
+se_mod_mlm_time_rs2 <- sqrt(diag(vcov(mod_mlm_time_rs2)))
+# table of estimates with 95% CI
+tab_mod_mlm_time_rs2 <- cbind(Est = fixef(mod_mlm_time_rs2), 
+                             LL = fixef(mod_mlm_time_rs2) - 1.96 * se_mod_mlm_time_rs2,
+                             UL = fixef(mod_mlm_time_rs2) + 1.96 * se_mod_mlm_time_rs2)
+exp(tab_mod_mlm_time_rs2)
+
+
+###---------MLM with random slope for time and nested pts (time measured @ pt-level)----------------
+##### adjusted + CCI + organ failure
+print("MLM with RS for time and patients; adjusted + CCI + organ failure") ##Got error!!
+print(Sys.time())
+mod_mlm_time_pt <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                           CCI + organ_failure + adm_mon + (adm_mon | prov_id) + (adm_mon | pat_key), 
+                         data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_mlm_time_pt) 
+
+se_mod_mlm_time_rs <- sqrt(diag(vcov(mod_mlm_time_pt)))
+# table of estimates with 95% CI
+tab_mod_mlm_time_pt <- cbind(Est = fixef(mod_mlm_time_pt), 
+                             LL = fixef(mod_mlm_time_pt) - 1.96 * se_mod_mlm_time_pt,
+                             UL = fixef(mod_mlm_time_pt) + 1.96 * se_mod_mlm_time_pt)
+exp(tab_mod_mlm_time_pt)
 
     
