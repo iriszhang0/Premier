@@ -370,9 +370,9 @@ sum(is.na(ARDS_data$age))
 summary(ARDS_data$los)
 
 
-# death at discharge (expired, expired at home/medical facility/place unknown)
-table(ARDS_data$death)
-table(ARDS_data$death)/length(ARDS_data$pat_key) #proportion
+# death at discharge (expired, expired at home/medical facility/place unknown) or hospice
+table(ARDS_data$death_or_hospice)
+table(ARDS_data$death_or_hospice)/length(ARDS_data$pat_key) #proportion
 
 #obesity
 table(ARDS_data$obesity)
@@ -389,6 +389,149 @@ sd(ARDS_data$CCI)
 #Organ failure
 mean(ARDS_data$organ_failure)
 sd(ARDS_data$organ_failure)
+
+
+###---------Stratifying Table 1 by Race/ethnicity-----------------------
+#NON-HISPANIC WHITE
+#sample sizes
+length(ARDS_data_White$pat_key) #White ARDS patients
+#gender
+sum(ARDS_data_White$gender == "M") #number of men
+table(ARDS_data_White$gender)
+table(ARDS_data_White$gender)/length(ARDS_data_White$pat_key) #proportion
+#insurance type
+table(ARDS_data_White$insurance)
+table(ARDS_data_White$insurance)/length(ARDS_data_White$pat_key) #proportion
+#obesity
+table(ARDS_data_White$obesity)
+table(ARDS_data_White$obesity)/length(ARDS_data_White$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_data_White$death_or_hospice)
+table(ARDS_data_White$death_or_hospice)/length(ARDS_data_White$pat_key) #proportion
+# age
+summary(ARDS_data_White$age) #age distribution
+mean(ARDS_data_White$age, na.rm = TRUE)
+sd(ARDS_data_White$age, na.rm = TRUE)
+sum(is.na(ARDS_data_White$age))
+#CCI
+mean(ARDS_data_White$CCI)
+sd(ARDS_data_White$CCI)
+#Organ failure
+mean(ARDS_data_White$organ_failure)
+sd(ARDS_data_White$organ_failure)
+
+
+#NON-HISPANIC BLACK
+#sample sizes
+length(ARDS_data_Black$pat_key) #Black ARDS patients
+#gender
+sum(ARDS_data_Black$gender == "M") #number of men
+table(ARDS_data_Black$gender)
+table(ARDS_data_Black$gender)/length(ARDS_data_Black$pat_key) #proportion
+#insurance type
+table(ARDS_data_Black$insurance)
+table(ARDS_data_Black$insurance)/length(ARDS_data_Black$pat_key) #proportion
+#obesity
+table(ARDS_data_Black$obesity)
+table(ARDS_data_Black$obesity)/length(ARDS_data_Black$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_data_Black$death_or_hospice)
+table(ARDS_data_Black$death_or_hospice)/length(ARDS_data_Black$pat_key) #proportion
+# age
+summary(ARDS_data_Black$age) #age distribution
+mean(ARDS_data_Black$age, na.rm = TRUE)
+sd(ARDS_data_Black$age, na.rm = TRUE)
+#CCI
+mean(ARDS_data_Black$CCI)
+sd(ARDS_data_Black$CCI)
+#Organ failure
+mean(ARDS_data_Black$organ_failure)
+sd(ARDS_data_Black$organ_failure)
+
+
+#HISPANIC
+#sample sizes
+length(ARDS_data_Hisp$pat_key) #Hispanic ARDS patients
+#gender
+sum(ARDS_data_Hisp$gender == "M") #number of men
+table(ARDS_data_Hisp$gender)
+table(ARDS_data_Hisp$gender)/length(ARDS_data_Hisp$pat_key) #proportion
+#insurance type
+table(ARDS_data_Hisp$insurance)
+table(ARDS_data_Hisp$insurance)/length(ARDS_data_Hisp$pat_key) #proportion
+#obesity
+table(ARDS_data_Hisp$obesity)
+table(ARDS_data_Hisp$obesity)/length(ARDS_data_Hisp$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_data_Hisp$death_or_hospice)
+table(ARDS_data_Hisp$death_or_hospice)/length(ARDS_data_Hisp$pat_key) #proportion
+# age
+summary(ARDS_data_Hisp$age) #age distribution
+mean(ARDS_data_Hisp$age, na.rm = TRUE)
+sd(ARDS_data_Hisp$age, na.rm = TRUE)
+#CCI
+mean(ARDS_data_Hisp$CCI)
+sd(ARDS_data_Hisp$CCI)
+#Organ failure
+mean(ARDS_data_Hisp$organ_failure)
+sd(ARDS_data_Hisp$organ_failure)
+
+
+#ASIAN
+#sample sizes
+length(ARDS_data_Asian_pt$pat_key) #Asian ARDS patients
+#gender
+sum(ARDS_data_Asian_pt$gender == "M") #number of men
+table(ARDS_data_Asian_pt$gender)
+table(ARDS_data_Asian_pt$gender)/length(ARDS_data_Asian_pt$pat_key) #proportion
+#insurance type
+table(ARDS_data_Asian_pt$insurance)
+table(ARDS_data_Asian_pt$insurance)/length(ARDS_data_Asian_pt$pat_key) #proportion
+#obesity
+table(ARDS_data_Asian_pt$obesity)
+table(ARDS_data_Asian_pt$obesity)/length(ARDS_data_Asian_pt$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_data_Asian_pt$death_or_hospice)
+table(ARDS_data_Asian_pt$death_or_hospice)/length(ARDS_data_Asian_pt$pat_key) #proportion
+# age
+summary(ARDS_data_Asian_pt$age) #age distribution
+mean(ARDS_data_Asian_pt$age, na.rm = TRUE)
+sd(ARDS_data_Asian_pt$age, na.rm = TRUE)
+#CCI
+mean(ARDS_data_Asian_pt$CCI)
+sd(ARDS_data_Asian_pt$CCI)
+#Organ failure
+mean(ARDS_data_Asian_pt$organ_failure)
+sd(ARDS_data_Asian_pt$organ_failure)
+
+
+#OTHER
+#sample sizes
+length(ARDS_data_Other$pat_key) #Other race/ethn ARDS patients
+#gender
+sum(ARDS_data_Other$gender == "M") #number of men
+table(ARDS_data_Other$gender)
+table(ARDS_data_Other$gender)/length(ARDS_data_Other$pat_key) #proportion
+#insurance type
+table(ARDS_data_Other$insurance)
+table(ARDS_data_Other$insurance)/length(ARDS_data_Other$pat_key) #proportion
+#obesity
+table(ARDS_data_Other$obesity)
+table(ARDS_data_Other$obesity)/length(ARDS_data_Other$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_data_Other$death_or_hospice)
+table(ARDS_data_Other$death_or_hospice)/length(ARDS_data_Other$pat_key) #proportion
+# age
+summary(ARDS_data_Other$age) #age distribution
+mean(ARDS_data_Other$age, na.rm = TRUE)
+sd(ARDS_data_Other$age, na.rm = TRUE)
+#CCI
+mean(ARDS_data_Other$CCI)
+sd(ARDS_data_Other$CCI)
+#Organ failure
+mean(ARDS_data_Other$organ_failure)
+sd(ARDS_data_Other$organ_failure)
+
 
 # Table 1b ------------------
 
@@ -1314,6 +1457,23 @@ tab_mod_mlm_time_fe <- cbind(Est = fixef(mod_mlm_time_fe),
                             UL = fixef(mod_mlm_time_fe) + 1.96 * se_mod_mlm_time_fe)
 exp(tab_mod_mlm_time_fe)
 
+###---------MLM with random intercept for time while still clustering for hospital----------------
+##### adjusted + CCI + organ failure
+print("MLM with RI for time; adjusted + CCI + organ failure")
+print(Sys.time())
+mod_mlm_time_ri <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                            CCI + organ_failure + (1 | prov_id) + (1 | adm_mon), 
+                          data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_mlm_time_ri) 
+
+se_mod_mlm_time_ri <- sqrt(diag(vcov(mod_mlm_time_ri)))
+# table of estimates with 95% CI
+tab_mod_mlm_time_ri <- cbind(Est = fixef(mod_mlm_time_ri), 
+                              LL = fixef(mod_mlm_time_ri) - 1.96 * se_mod_mlm_time_ri,
+                              UL = fixef(mod_mlm_time_ri) + 1.96 * se_mod_mlm_time_ri)
+exp(tab_mod_mlm_time_ri)
+
 ###---------MLM with random slope for time----------------
 ##### adjusted + CCI + organ failure
 print("MLM with RS for time; adjusted + CCI + organ failure")
@@ -1351,19 +1511,19 @@ exp(tab_mod_mlm_time_rs2)
 
 ###---------MLM with random slope for time and nested pts (time measured @ pt-level)----------------
 ##### adjusted + CCI + organ failure
-print("MLM with RS for time and patients; adjusted + CCI + organ failure") ##Got error!!
-print(Sys.time())
-mod_mlm_time_pt <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
-                           CCI + organ_failure + adm_mon + (adm_mon | prov_id) + (adm_mon | pat_key), 
-                         data = ARDS_data, family = binomial)
-print(Sys.time()) 
-summary(mod_mlm_time_pt) 
+#print("MLM with RS for time and patients; adjusted + CCI + organ failure") ##Got error!! (wouldn't run!!)
+#print(Sys.time())
+#mod_mlm_time_pt <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+#                           CCI + organ_failure + adm_mon + (adm_mon | prov_id) + (adm_mon | pat_key), 
+#                         data = ARDS_data, family = binomial)
+#print(Sys.time()) 
+#summary(mod_mlm_time_pt) 
 
-se_mod_mlm_time_rs <- sqrt(diag(vcov(mod_mlm_time_pt)))
+#se_mod_mlm_time_rs <- sqrt(diag(vcov(mod_mlm_time_pt)))
 # table of estimates with 95% CI
-tab_mod_mlm_time_pt <- cbind(Est = fixef(mod_mlm_time_pt), 
-                             LL = fixef(mod_mlm_time_pt) - 1.96 * se_mod_mlm_time_pt,
-                             UL = fixef(mod_mlm_time_pt) + 1.96 * se_mod_mlm_time_pt)
-exp(tab_mod_mlm_time_pt)
+#tab_mod_mlm_time_pt <- cbind(Est = fixef(mod_mlm_time_pt), 
+#                             LL = fixef(mod_mlm_time_pt) - 1.96 * se_mod_mlm_time_pt,
+#                             UL = fixef(mod_mlm_time_pt) + 1.96 * se_mod_mlm_time_pt)
+#exp(tab_mod_mlm_time_pt)
 
     
