@@ -36,6 +36,44 @@ print("merging")
 merged_data <- left_join(merged_data, all_aprdrg, by = "pat_key")
 print(Sys.time())
 
+
+
+###LOADING AND MERGING BILLING DATA - USING AWS!!
+##################################
+# Billing (_patbill) files
+
+library(readr)
+library(dplyr)
+library(stringr)
+
+setwd("Y:\\export_2025-01-08-193652\\_patbill")  # Set working directory
+print("Merging _patbill files:")
+
+# List all TXT files that contain "_patbill" in the name
+files <- list.files(pattern = "_patbill.*\\.txt$")  
+
+init <- 1  # Initialization flag
+
+for (f in files) {
+  print(f)  # Print the file name being processed
+  
+  # Read the file with "|" as a separator, selecting only needed columns
+  temp <- read_delim(f, delim = "|", col_types = cols()) %>%
+    select(PAT_KEY, SERV_DAY)  # Keep only relevant columns
+  
+  # Merge files
+  if (init == 1) { 
+    data <- temp  # First file
+    init <- 0
+  } else { 
+    data <- bind_rows(data, temp)  # Append to existing dataset
+  }
+}
+
+# Save merged data as RData file
+save(data, file = "nyu_allyears_patbill.RData")
+
+
 #------------------------------create respiratory and prisoner variables and covariates -------------------------
 
 print("creating ARDS")
@@ -357,6 +395,40 @@ RF_data_complete <- RF_data_complete %>%
          renal_score = if_else(any(str_detect(diagnoses_all, renal_sofa)), 1, 0)) %>%
   mutate(organ_failure = cvd_score + resp_score + neuro_score + 
            hema_score + hepatic_score + renal_score)
+
+
+
+###-----------Managing Admission Month ----------------
+##Looking at distribution of admission month
+table(RF_data_complete$adm_mon)
+
+##Dropping any observations with adm_month before Jan 2017
+RF_data_complete <- RF_data_complete %>%
+  filter(adm_mon >= 2017101)
+table(RF_data_complete$adm_mon)
+
+
+####------------ASSESSING MORTALITY PATTERNS OVER TIME ---------------------------------
+
+#MORTALITY count by month----
+RF_data_complete <- RF_data_complete %>%				
+  mutate(				
+    adm_mon = as.numeric(adm_mon),  # Ensure it's numeric				
+    year = as.integer(substr(adm_mon, 1, 4)),  # Extract the first 4 digits as year				
+    month = as.integer(substr(adm_mon, 6, 7)))  # Extract the last 2 digits as month			
+
+summary(RF_data_complete$year)				
+summary(RF_data_complete$month)				
+table(RF_data_complete$year)				
+table(RF_data_complete$year, RF_data_complete$month)	
+
+deaths_per_year_month <- RF_data_complete %>%                
+  filter(death == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month, n = Inf)
 
 
 

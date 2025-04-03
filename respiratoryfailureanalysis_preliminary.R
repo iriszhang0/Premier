@@ -269,6 +269,31 @@ mechvent_data <- mechvent_data %>%
   filter(gender != "U" & #dropped xx observations
            race_ethnicity != "Unknown") 
 
+
+##---------CHECKING FOR DUPLICATES-----------------
+duplicate_ids <- ARDS_data$pat_key[duplicated(ARDS_data$pat_key)]
+print(duplicate_ids)
+
+duplicates <- ARDS_data[ARDS_data$pat_key %in% duplicate_ids, ]
+print(duplicates)
+##no duplicates found
+
+ARDS_data %>%
+  group_by(pat_key) %>%
+  summarise(count = n()) %>%
+  filter(count > 1)
+
+
+###-----------Managing Admission Month ----------------
+##Looking at distribution of admission month
+table(ARDS_data$adm_mon)
+
+##Dropping any observations with adm_month before Jan 2017
+ARDS_data <- ARDS_data %>%
+  filter(adm_mon >= 2017101)
+table(ARDS_data$adm_mon)
+
+
 # create CCI in these smaller datasets -----------------
 ## create CCI score ------------------
 # 
@@ -368,6 +393,7 @@ sum(is.na(ARDS_data$age))
 
 # length of stay
 summary(ARDS_data$los)
+sd(ARDS_data$los)
 
 
 # death at discharge (expired, expired at home/medical facility/place unknown) or hospice
@@ -392,6 +418,28 @@ sd(ARDS_data$organ_failure)
 
 
 ###---------Stratifying Table 1 by Race/ethnicity-----------------------
+##STEP 1: Create stratified data sets (by race/ethnicity)
+##### A) Non-Hispanic White
+ARDS_data_White <- ARDS_data %>%
+  filter(race_ethnicity == "nonHispanic_White")
+
+##### B) Non-Hispanic Black
+ARDS_data_Black <- ARDS_data %>%
+  filter(race_ethnicity == "nonHispanic_Black")
+
+##### C) Hispanic
+ARDS_data_Hisp <- ARDS_data %>%
+  filter(race_ethnicity == "Hispanic")
+
+##### D) Asian
+ARDS_data_Asian_pt <- ARDS_data %>%
+  filter(race_ethnicity == "Asian")
+
+##### E) Other
+ARDS_data_Other <- ARDS_data %>%
+  filter(race_ethnicity == "Other")
+
+
 #NON-HISPANIC WHITE
 #sample sizes
 length(ARDS_data_White$pat_key) #White ARDS patients
@@ -408,6 +456,9 @@ table(ARDS_data_White$obesity)/length(ARDS_data_White$pat_key) #proportion
 # death at discharge or hospice
 table(ARDS_data_White$death_or_hospice)
 table(ARDS_data_White$death_or_hospice)/length(ARDS_data_White$pat_key) #proportion
+# length of stay
+summary(ARDS_data_White$los)
+sd(ARDS_data_White$los)
 # age
 summary(ARDS_data_White$age) #age distribution
 mean(ARDS_data_White$age, na.rm = TRUE)
@@ -437,6 +488,9 @@ table(ARDS_data_Black$obesity)/length(ARDS_data_Black$pat_key) #proportion
 # death at discharge or hospice
 table(ARDS_data_Black$death_or_hospice)
 table(ARDS_data_Black$death_or_hospice)/length(ARDS_data_Black$pat_key) #proportion
+# length of stay
+summary(ARDS_data_Black$los)
+sd(ARDS_data_Black$los)
 # age
 summary(ARDS_data_Black$age) #age distribution
 mean(ARDS_data_Black$age, na.rm = TRUE)
@@ -465,6 +519,9 @@ table(ARDS_data_Hisp$obesity)/length(ARDS_data_Hisp$pat_key) #proportion
 # death at discharge or hospice
 table(ARDS_data_Hisp$death_or_hospice)
 table(ARDS_data_Hisp$death_or_hospice)/length(ARDS_data_Hisp$pat_key) #proportion
+# length of stay
+summary(ARDS_data_Hisp$los)
+sd(ARDS_data_Hisp$los)
 # age
 summary(ARDS_data_Hisp$age) #age distribution
 mean(ARDS_data_Hisp$age, na.rm = TRUE)
@@ -493,6 +550,9 @@ table(ARDS_data_Asian_pt$obesity)/length(ARDS_data_Asian_pt$pat_key) #proportion
 # death at discharge or hospice
 table(ARDS_data_Asian_pt$death_or_hospice)
 table(ARDS_data_Asian_pt$death_or_hospice)/length(ARDS_data_Asian_pt$pat_key) #proportion
+# length of stay
+summary(ARDS_data_Asian_pt$los)
+sd(ARDS_data_Asian_pt$los)
 # age
 summary(ARDS_data_Asian_pt$age) #age distribution
 mean(ARDS_data_Asian_pt$age, na.rm = TRUE)
@@ -521,6 +581,9 @@ table(ARDS_data_Other$obesity)/length(ARDS_data_Other$pat_key) #proportion
 # death at discharge or hospice
 table(ARDS_data_Other$death_or_hospice)
 table(ARDS_data_Other$death_or_hospice)/length(ARDS_data_Other$pat_key) #proportion
+# length of stay
+summary(ARDS_data_Other$los)
+sd(ARDS_data_Other$los)
 # age
 summary(ARDS_data_Other$age) #age distribution
 mean(ARDS_data_Other$age, na.rm = TRUE)
@@ -540,7 +603,7 @@ table(ARDS_data$death, ARDS_data$race_ethnicity)
 
 # Table 1c -----------------------
 
-#death by race/ethnicity
+#death or hospic by race/ethnicity
 table(ARDS_data$death_or_hospice, ARDS_data$race_ethnicity)
 
 
@@ -549,19 +612,21 @@ table(ARDS_data$inhospital_death, ARDS_data$race_ethnicity)
 
 # Bivariate association Table 2a --------------------
 # main predictor (race)
-chisq.test(ARDS_data$death, ARDS_data$race_ethnicity) #death
+chisq.test(ARDS_data$death_or_hospice, ARDS_data$race_ethnicity) #death
 chisq.test(ARDS_data$gender, ARDS_data$race_ethnicity) #gender
 chisq.test(ARDS_data$obesity, ARDS_data$race_ethnicity) #obesity
 chisq.test(ARDS_data$insurance, ARDS_data$race_ethnicity) #insurance type
+#aov(los ~ race_ethnicity, data=ARDS_data) #LOS
+kruskal.test(los ~ race_ethnicity, data=ARDS_data) #LOS (non-parametric alternative to ANOVA)
+
 
 
 # outcome (death)
-chisq.test(ARDS_data$race_ethnicity, ARDS_data$death) #race
+chisq.test(ARDS_data$race_ethnicity, ARDS_data$death_or_hospice) #race
 #chisq.test(ARDS_data$hispanic_ind, ARDS_data$death) #ethnicity
-chisq.test(ARDS_data$gender, ARDS_data$death) #gender
-chisq.test(ARDS_data$obesity, ARDS_data$death) #obesity
-
-chisq.test(ARDS_data$insurance, ARDS_data$death) #insurance type
+chisq.test(ARDS_data$gender, ARDS_data$death_or_hospice) #gender
+chisq.test(ARDS_data$obesity, ARDS_data$death_or_hospice) #obesity
+chisq.test(ARDS_data$insurance, ARDS_data$death_or_hospice) #insurance type
 
 
 
@@ -889,24 +954,24 @@ exp(tab_hosp_death)
 
 ##STEP 1: Create stratified data sets (by race/ethnicity)
 ##### A) Non-Hispanic White
-ARDS_data_White <- ARDS_data %>%
-  filter(race_ethnicity == "nonHispanic_White")
+#ARDS_data_White <- ARDS_data %>%
+#  filter(race_ethnicity == "nonHispanic_White")
 
 ##### B) Non-Hispanic Black
-ARDS_data_Black <- ARDS_data %>%
-  filter(race_ethnicity == "nonHispanic_Black")
+#ARDS_data_Black <- ARDS_data %>%
+#  filter(race_ethnicity == "nonHispanic_Black")
 
 ##### C) Hispanic
-ARDS_data_Hisp <- ARDS_data %>%
-  filter(race_ethnicity == "Hispanic")
+#ARDS_data_Hisp <- ARDS_data %>%
+#  filter(race_ethnicity == "Hispanic")
 
 ##### D) Asian
-ARDS_data_Asian_pt <- ARDS_data %>%
-  filter(race_ethnicity == "Asian")
+#ARDS_data_Asian_pt <- ARDS_data %>%
+#  filter(race_ethnicity == "Asian")
 
 ##### E) Other
-ARDS_data_Other <- ARDS_data %>%
-  filter(race_ethnicity == "Other")
+#ARDS_data_Other <- ARDS_data %>%
+#  filter(race_ethnicity == "Other")
 
 
 ##STEP 2: Run final model in each new race/ethnicity dataset
@@ -1012,14 +1077,13 @@ performance::icc(fin_mod_Oth)
 unique(ARDS_data$adm_mon)
 
 # pre-covid
-pre_covid <- c(2017101, 2016412, 2016411, 2017102, 2016308, 2016410,
-               2017103, 2017204, 2017205, 2017206, 2017307, 2017308,
-               2017309, 2013309, 2017410, 2017411, 2017412, 2018101,
-               2018102, 2018103, 2018204, 2018205, 2018206, 2018307,
-               2018308, 2018309, 2018410, 2018411, 2018412, 2019101,
-               2019102, 2019103, 2019204, 2019205, 2019206, 2019307,
-               2019308, 2019309, 2019410, 2019411, 2019412, 2020101,
-               2020102) #up to Feb 2020
+pre_covid <- c(2017101, 2017102, 2017103, 2017204, 2017205, 2017206, 
+               2017307, 2017308, 2017309, 2017410, 2017411, 2017412, 
+               2018101, 2018102, 2018103, 2018204, 2018205, 2018206, 
+               2018307, 2018308, 2018309, 2018410, 2018411, 2018412, 
+               2019101, 2019102, 2019103, 2019204, 2019205, 2019206, 
+               2019307, 2019308, 2019309, 2019410, 2019411, 2019412, 
+               2020101, 2020102) #up to Feb 2020
 
 covid <- c(2020103, 2020204, 2020205, 2020206, 2020307, 2020308, 
            2020309, 2020410, 2020411, 2020412, 2021103, 2021204,
@@ -1037,6 +1101,457 @@ ARDS_covid <- ARDS_data %>%
 # sample size
 dim(ARDS_precovid)
 dim(ARDS_covid)
+
+
+# PRE-COVID DESCRIPTIVE STATISTICS ----------------
+#sample sizes
+length(ARDS_precovid$pat_key) #ARDS patients
+
+length(unique(ARDS_precovid$prov_id)) #number of hospitals
+
+#gender
+sum(ARDS_precovid$gender == "M") #number of men
+table(ARDS_precovid$gender)
+table(ARDS_precovid$gender)/length(ARDS_precovid$pat_key) #proportion
+
+#race and ethnicity
+table(ARDS_precovid$race_ethnicity)
+table(ARDS_precovid$race_ethnicity)/length(ARDS_precovid$pat_key)
+
+# age
+summary(ARDS_precovid$age) #age distribution
+mean(ARDS_precovid$age, na.rm = TRUE)
+sd(ARDS_precovid$age, na.rm = TRUE)
+sum(is.na(ARDS_precovid$age))
+
+# length of stay
+summary(ARDS_precovid$los)
+sd(ARDS_precovid$los)
+
+# death at discharge (expired, expired at home/medical facility/place unknown) or hospice
+table(ARDS_precovid$death_or_hospice)
+table(ARDS_precovid$death_or_hospice)/length(ARDS_precovid$pat_key) #proportion
+
+#obesity
+table(ARDS_precovid$obesity)
+table(ARDS_precovid$obesity)/length(ARDS_precovid$pat_key) #proportion
+
+#insurance type
+table(ARDS_precovid$insurance)
+table(ARDS_precovid$insurance)/length(ARDS_precovid$pat_key) #proportion
+
+#CCI
+mean(ARDS_precovid$CCI)
+sd(ARDS_precovid$CCI)
+
+#Organ failure
+mean(ARDS_precovid$organ_failure)
+sd(ARDS_precovid$organ_failure)
+
+
+###---------Stratifying Table 1 by Race/ethnicity-----------------------
+##STEP 1: Create stratified data sets (by race/ethnicity)
+##### A) Non-Hispanic White
+ARDS_precovid_White <- ARDS_precovid %>%
+  filter(race_ethnicity == "nonHispanic_White")
+
+##### B) Non-Hispanic Black
+ARDS_precovid_Black <- ARDS_precovid %>%
+  filter(race_ethnicity == "nonHispanic_Black")
+
+##### C) Hispanic
+ARDS_precovid_Hisp <- ARDS_precovid %>%
+  filter(race_ethnicity == "Hispanic")
+
+##### D) Asian
+ARDS_precovid_Asian_pt <- ARDS_precovid %>%
+  filter(race_ethnicity == "Asian")
+
+##### E) Other
+ARDS_precovid_Other <- ARDS_precovid %>%
+  filter(race_ethnicity == "Other")
+
+
+#NON-HISPANIC WHITE
+#sample sizes
+length(ARDS_precovid_White$pat_key) #White ARDS patients
+#gender
+sum(ARDS_precovid_White$gender == "M") #number of men
+table(ARDS_precovid_White$gender)
+table(ARDS_precovid_White$gender)/length(ARDS_precovid_White$pat_key) #proportion
+#insurance type
+table(ARDS_precovid_White$insurance)
+table(ARDS_precovid_White$insurance)/length(ARDS_precovid_White$pat_key) #proportion
+#obesity
+table(ARDS_precovid_White$obesity)
+table(ARDS_precovid_White$obesity)/length(ARDS_precovid_White$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_precovid_White$death_or_hospice)
+table(ARDS_precovid_White$death_or_hospice)/length(ARDS_precovid_White$pat_key) #proportion
+# length of stay
+summary(ARDS_precovid_White$los)
+sd(ARDS_precovid_White$los)
+# age
+summary(ARDS_precovid_White$age) #age distribution
+mean(ARDS_precovid_White$age, na.rm = TRUE)
+sd(ARDS_precovid_White$age, na.rm = TRUE)
+sum(is.na(ARDS_precovid_White$age))
+#CCI
+mean(ARDS_precovid_White$CCI)
+sd(ARDS_precovid_White$CCI)
+#Organ failure
+mean(ARDS_precovid_White$organ_failure)
+sd(ARDS_precovid_White$organ_failure)
+
+
+#NON-HISPANIC BLACK
+#sample sizes
+length(ARDS_precovid_Black$pat_key) #Black ARDS patients
+#gender
+sum(ARDS_precovid_Black$gender == "M") #number of men
+table(ARDS_precovid_Black$gender)
+table(ARDS_precovid_Black$gender)/length(ARDS_precovid_Black$pat_key) #proportion
+#insurance type
+table(ARDS_precovid_Black$insurance)
+table(ARDS_precovid_Black$insurance)/length(ARDS_precovid_Black$pat_key) #proportion
+#obesity
+table(ARDS_precovid_Black$obesity)
+table(ARDS_precovid_Black$obesity)/length(ARDS_precovid_Black$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_precovid_Black$death_or_hospice)
+table(ARDS_precovid_Black$death_or_hospice)/length(ARDS_precovid_Black$pat_key) #proportion
+# length of stay
+summary(ARDS_precovid_Black$los)
+sd(ARDS_precovid_Black$los)
+# age
+summary(ARDS_precovid_Black$age) #age distribution
+mean(ARDS_precovid_Black$age, na.rm = TRUE)
+sd(ARDS_precovid_Black$age, na.rm = TRUE)
+#CCI
+mean(ARDS_precovid_Black$CCI)
+sd(ARDS_precovid_Black$CCI)
+#Organ failure
+mean(ARDS_precovid_Black$organ_failure)
+sd(ARDS_precovid_Black$organ_failure)
+
+
+#HISPANIC
+#sample sizes
+length(ARDS_precovid_Hisp$pat_key) #Hispanic ARDS patients
+#gender
+sum(ARDS_precovid_Hisp$gender == "M") #number of men
+table(ARDS_precovid_Hisp$gender)
+table(ARDS_precovid_Hisp$gender)/length(ARDS_precovid_Hisp$pat_key) #proportion
+#insurance type
+table(ARDS_precovid_Hisp$insurance)
+table(ARDS_precovid_Hisp$insurance)/length(ARDS_precovid_Hisp$pat_key) #proportion
+#obesity
+table(ARDS_precovid_Hisp$obesity)
+table(ARDS_precovid_Hisp$obesity)/length(ARDS_precovid_Hisp$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_precovid_Hisp$death_or_hospice)
+table(ARDS_precovid_Hisp$death_or_hospice)/length(ARDS_precovid_Hisp$pat_key) #proportion
+# length of stay
+summary(ARDS_precovid_Hisp$los)
+sd(ARDS_precovid_Hisp$los)
+# age
+summary(ARDS_precovid_Hisp$age) #age distribution
+mean(ARDS_precovid_Hisp$age, na.rm = TRUE)
+sd(ARDS_precovid_Hisp$age, na.rm = TRUE)
+#CCI
+mean(ARDS_precovid_Hisp$CCI)
+sd(ARDS_precovid_Hisp$CCI)
+#Organ failure
+mean(ARDS_precovid_Hisp$organ_failure)
+sd(ARDS_precovid_Hisp$organ_failure)
+
+
+#ASIAN
+#sample sizes
+length(ARDS_precovid_Asian_pt$pat_key) #Asian ARDS patients
+#gender
+sum(ARDS_precovid_Asian_pt$gender == "M") #number of men
+table(ARDS_precovid_Asian_pt$gender)
+table(ARDS_precovid_Asian_pt$gender)/length(ARDS_precovid_Asian_pt$pat_key) #proportion
+#insurance type
+table(ARDS_precovid_Asian_pt$insurance)
+table(ARDS_precovid_Asian_pt$insurance)/length(ARDS_precovid_Asian_pt$pat_key) #proportion
+#obesity
+table(ARDS_precovid_Asian_pt$obesity)
+table(ARDS_precovid_Asian_pt$obesity)/length(ARDS_precovid_Asian_pt$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_precovid_Asian_pt$death_or_hospice)
+table(ARDS_precovid_Asian_pt$death_or_hospice)/length(ARDS_precovid_Asian_pt$pat_key) #proportion
+# length of stay
+summary(ARDS_precovid_Asian_pt$los)
+sd(ARDS_precovid_Asian_pt$los)
+# age
+summary(ARDS_precovid_Asian_pt$age) #age distribution
+mean(ARDS_precovid_Asian_pt$age, na.rm = TRUE)
+sd(ARDS_precovid_Asian_pt$age, na.rm = TRUE)
+#CCI
+mean(ARDS_precovid_Asian_pt$CCI)
+sd(ARDS_precovid_Asian_pt$CCI)
+#Organ failure
+mean(ARDS_precovid_Asian_pt$organ_failure)
+sd(ARDS_precovid_Asian_pt$organ_failure)
+
+
+#OTHER
+#sample sizes
+length(ARDS_precovid_Other$pat_key) #Other race/ethn ARDS patients
+#gender
+sum(ARDS_precovid_Other$gender == "M") #number of men
+table(ARDS_precovid_Other$gender)
+table(ARDS_precovid_Other$gender)/length(ARDS_precovid_Other$pat_key) #proportion
+#insurance type
+table(ARDS_precovid_Other$insurance)
+table(ARDS_precovid_Other$insurance)/length(ARDS_precovid_Other$pat_key) #proportion
+#obesity
+table(ARDS_precovid_Other$obesity)
+table(ARDS_precovid_Other$obesity)/length(ARDS_precovid_Other$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_precovid_Other$death_or_hospice)
+table(ARDS_precovid_Other$death_or_hospice)/length(ARDS_precovid_Other$pat_key) #proportion
+# length of stay
+summary(ARDS_precovid_Other$los)
+sd(ARDS_precovid_Other$los)
+# age
+summary(ARDS_precovid_Other$age) #age distribution
+mean(ARDS_precovid_Other$age, na.rm = TRUE)
+sd(ARDS_precovid_Other$age, na.rm = TRUE)
+#CCI
+mean(ARDS_precovid_Other$CCI)
+sd(ARDS_precovid_Other$CCI)
+#Organ failure
+mean(ARDS_precovid_Other$organ_failure)
+sd(ARDS_precovid_Other$organ_failure)
+
+
+# COVID DESCRIPTIVE STATISTICS ----------------
+#sample sizes
+length(ARDS_covid$pat_key) #ARDS patients
+
+length(unique(ARDS_covid$prov_id)) #number of hospitals
+
+#gender
+sum(ARDS_covid$gender == "M") #number of men
+table(ARDS_covid$gender)
+table(ARDS_covid$gender)/length(ARDS_covid$pat_key) #proportion
+
+#race and ethnicity
+table(ARDS_covid$race_ethnicity)
+table(ARDS_covid$race_ethnicity)/length(ARDS_covid$pat_key)
+
+# age
+summary(ARDS_covid$age) #age distribution
+mean(ARDS_covid$age, na.rm = TRUE)
+sd(ARDS_covid$age, na.rm = TRUE)
+sum(is.na(ARDS_covid$age))
+
+# length of stay
+summary(ARDS_covid$los)
+sd(ARDS_covid$los)
+
+# death at discharge (expired, expired at home/medical facility/place unknown) or hospice
+table(ARDS_covid$death_or_hospice)
+table(ARDS_covid$death_or_hospice)/length(ARDS_covid$pat_key) #proportion
+
+#obesity
+table(ARDS_covid$obesity)
+table(ARDS_covid$obesity)/length(ARDS_covid$pat_key) #proportion
+
+#insurance type
+table(ARDS_covid$insurance)
+table(ARDS_covid$insurance)/length(ARDS_covid$pat_key) #proportion
+
+#CCI
+mean(ARDS_covid$CCI)
+sd(ARDS_covid$CCI)
+
+#Organ failure
+mean(ARDS_covid$organ_failure)
+sd(ARDS_covid$organ_failure)
+
+
+###---------Stratifying Table 1 by Race/ethnicity-----------------------
+##STEP 1: Create stratified data sets (by race/ethnicity)
+##### A) Non-Hispanic White
+ARDS_covid_White <- ARDS_covid %>%
+  filter(race_ethnicity == "nonHispanic_White")
+
+##### B) Non-Hispanic Black
+ARDS_covid_Black <- ARDS_covid %>%
+  filter(race_ethnicity == "nonHispanic_Black")
+
+##### C) Hispanic
+ARDS_covid_Hisp <- ARDS_covid %>%
+  filter(race_ethnicity == "Hispanic")
+
+##### D) Asian
+ARDS_covid_Asian_pt <- ARDS_covid %>%
+  filter(race_ethnicity == "Asian")
+
+##### E) Other
+ARDS_covid_Other <- ARDS_covid %>%
+  filter(race_ethnicity == "Other")
+
+
+#NON-HISPANIC WHITE
+#sample sizes
+length(ARDS_covid_White$pat_key) #White ARDS patients
+#gender
+sum(ARDS_covid_White$gender == "M") #number of men
+table(ARDS_covid_White$gender)
+table(ARDS_covid_White$gender)/length(ARDS_covid_White$pat_key) #proportion
+#insurance type
+table(ARDS_covid_White$insurance)
+table(ARDS_covid_White$insurance)/length(ARDS_covid_White$pat_key) #proportion
+#obesity
+table(ARDS_covid_White$obesity)
+table(ARDS_covid_White$obesity)/length(ARDS_covid_White$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_covid_White$death_or_hospice)
+table(ARDS_covid_White$death_or_hospice)/length(ARDS_covid_White$pat_key) #proportion
+# length of stay
+summary(ARDS_covid_White$los)
+sd(ARDS_covid_White$los)
+# age
+summary(ARDS_covid_White$age) #age distribution
+mean(ARDS_covid_White$age, na.rm = TRUE)
+sd(ARDS_covid_White$age, na.rm = TRUE)
+sum(is.na(ARDS_covid_White$age))
+#CCI
+mean(ARDS_covid_White$CCI)
+sd(ARDS_covid_White$CCI)
+#Organ failure
+mean(ARDS_covid_White$organ_failure)
+sd(ARDS_covid_White$organ_failure)
+
+
+#NON-HISPANIC BLACK
+#sample sizes
+length(ARDS_covid_Black$pat_key) #Black ARDS patients
+#gender
+sum(ARDS_covid_Black$gender == "M") #number of men
+table(ARDS_covid_Black$gender)
+table(ARDS_covid_Black$gender)/length(ARDS_covid_Black$pat_key) #proportion
+#insurance type
+table(ARDS_covid_Black$insurance)
+table(ARDS_covid_Black$insurance)/length(ARDS_covid_Black$pat_key) #proportion
+#obesity
+table(ARDS_covid_Black$obesity)
+table(ARDS_covid_Black$obesity)/length(ARDS_covid_Black$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_covid_Black$death_or_hospice)
+table(ARDS_covid_Black$death_or_hospice)/length(ARDS_covid_Black$pat_key) #proportion
+# length of stay
+summary(ARDS_covid_Black$los)
+sd(ARDS_covid_Black$los)
+# age
+summary(ARDS_covid_Black$age) #age distribution
+mean(ARDS_covid_Black$age, na.rm = TRUE)
+sd(ARDS_covid_Black$age, na.rm = TRUE)
+#CCI
+mean(ARDS_covid_Black$CCI)
+sd(ARDS_covid_Black$CCI)
+#Organ failure
+mean(ARDS_covid_Black$organ_failure)
+sd(ARDS_covid_Black$organ_failure)
+
+
+#HISPANIC
+#sample sizes
+length(ARDS_covid_Hisp$pat_key) #Hispanic ARDS patients
+#gender
+sum(ARDS_covid_Hisp$gender == "M") #number of men
+table(ARDS_covid_Hisp$gender)
+table(ARDS_covid_Hisp$gender)/length(ARDS_covid_Hisp$pat_key) #proportion
+#insurance type
+table(ARDS_covid_Hisp$insurance)
+table(ARDS_covid_Hisp$insurance)/length(ARDS_covid_Hisp$pat_key) #proportion
+#obesity
+table(ARDS_covid_Hisp$obesity)
+table(ARDS_covid_Hisp$obesity)/length(ARDS_covid_Hisp$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_covid_Hisp$death_or_hospice)
+table(ARDS_covid_Hisp$death_or_hospice)/length(ARDS_covid_Hisp$pat_key) #proportion
+# length of stay
+summary(ARDS_covid_Hisp$los)
+sd(ARDS_covid_Hisp$los)
+# age
+summary(ARDS_covid_Hisp$age) #age distribution
+mean(ARDS_covid_Hisp$age, na.rm = TRUE)
+sd(ARDS_covid_Hisp$age, na.rm = TRUE)
+#CCI
+mean(ARDS_covid_Hisp$CCI)
+sd(ARDS_covid_Hisp$CCI)
+#Organ failure
+mean(ARDS_covid_Hisp$organ_failure)
+sd(ARDS_covid_Hisp$organ_failure)
+
+
+#ASIAN
+#sample sizes
+length(ARDS_covid_Asian_pt$pat_key) #Asian ARDS patients
+#gender
+sum(ARDS_covid_Asian_pt$gender == "M") #number of men
+table(ARDS_covid_Asian_pt$gender)
+table(ARDS_covid_Asian_pt$gender)/length(ARDS_covid_Asian_pt$pat_key) #proportion
+#insurance type
+table(ARDS_covid_Asian_pt$insurance)
+table(ARDS_covid_Asian_pt$insurance)/length(ARDS_covid_Asian_pt$pat_key) #proportion
+#obesity
+table(ARDS_covid_Asian_pt$obesity)
+table(ARDS_covid_Asian_pt$obesity)/length(ARDS_covid_Asian_pt$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_covid_Asian_pt$death_or_hospice)
+table(ARDS_covid_Asian_pt$death_or_hospice)/length(ARDS_covid_Asian_pt$pat_key) #proportion
+# length of stay
+summary(ARDS_covid_Asian_pt$los)
+sd(ARDS_covid_Asian_pt$los)
+# age
+summary(ARDS_covid_Asian_pt$age) #age distribution
+mean(ARDS_covid_Asian_pt$age, na.rm = TRUE)
+sd(ARDS_covid_Asian_pt$age, na.rm = TRUE)
+#CCI
+mean(ARDS_covid_Asian_pt$CCI)
+sd(ARDS_covid_Asian_pt$CCI)
+#Organ failure
+mean(ARDS_covid_Asian_pt$organ_failure)
+sd(ARDS_covid_Asian_pt$organ_failure)
+
+
+#OTHER
+#sample sizes
+length(ARDS_covid_Other$pat_key) #Other race/ethn ARDS patients
+#gender
+sum(ARDS_covid_Other$gender == "M") #number of men
+table(ARDS_covid_Other$gender)
+table(ARDS_covid_Other$gender)/length(ARDS_covid_Other$pat_key) #proportion
+#insurance type
+table(ARDS_covid_Other$insurance)
+table(ARDS_covid_Other$insurance)/length(ARDS_covid_Other$pat_key) #proportion
+#obesity
+table(ARDS_covid_Other$obesity)
+table(ARDS_covid_Other$obesity)/length(ARDS_covid_Other$pat_key) #proportion
+# death at discharge or hospice
+table(ARDS_covid_Other$death_or_hospice)
+table(ARDS_covid_Other$death_or_hospice)/length(ARDS_covid_Other$pat_key) #proportion
+# length of stay
+summary(ARDS_covid_Other$los)
+sd(ARDS_covid_Other$los)
+# age
+summary(ARDS_covid_Other$age) #age distribution
+mean(ARDS_covid_Other$age, na.rm = TRUE)
+sd(ARDS_covid_Other$age, na.rm = TRUE)
+#CCI
+mean(ARDS_covid_Other$CCI)
+sd(ARDS_covid_Other$CCI)
+#Organ failure
+mean(ARDS_covid_Other$organ_failure)
+sd(ARDS_covid_Other$organ_failure)
+
 
 ## table 4a, pre-covid, outcome death -----------
 
@@ -1092,10 +1607,98 @@ exp(tab_4a_3)
 
 ## table 4b, pre-covid, outcome death or hospice -----------
 
-#adjusted
-print("adjusted")
+#unadjusted - no MLM; regular LR
+print("unadjusted")
 print(Sys.time())
-m_4b_1 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4b_glm <- glm(death_or_hospice ~ race_ethnicity, 
+                   data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_glm)
+
+se_4b_glm <- sqrt(diag(vcov(m_4b_glm)))
+# table of estimates with 95% CI
+tab_4b_glm <- cbind(Est = coef(m_4b_glm), 
+                     LL = coef(m_4b_glm) - 1.96 * se_4b_glm,
+                     UL = coef(m_4b_glm) + 1.96 * se_4b_glm)
+exp(tab_4b_glm)
+
+
+#unadjusted
+print("unadjusted")
+print(Sys.time())
+m_4b_unad <- glmer(death_or_hospice ~ race_ethnicity +
+                  (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_unad)
+
+se_4b_unad <- sqrt(diag(vcov(m_4b_unad)))
+# table of estimates with 95% CI
+tab_4b_unad <- cbind(Est = fixef(m_4b_unad), 
+                  LL = fixef(m_4b_unad) - 1.96 * se_4b_unad,
+                  UL = fixef(m_4b_unad) + 1.96 * se_4b_unad)
+exp(tab_4b_unad)
+
+
+#adjusted, age
+print("adjusted, race + age")
+print(Sys.time())
+m_4b_ag <- glmer(death_or_hospice ~ race_ethnicity + age +
+                   (1 | prov_id), 
+                 data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_ag) 
+
+se_4b_ag <- sqrt(diag(vcov(m_4b_ag)))
+# table of estimates with 95% CI
+tab_4b_ag <- cbind(Est = fixef(m_4b_ag), 
+                   LL = fixef(m_4b_ag) - 1.96 * se_4b_ag,
+                   UL = fixef(m_4b_ag) + 1.96 * se_4b_ag)
+exp(tab_4b_ag)
+
+
+#Standardizing age
+ARDS_precovid$age_std <- (ARDS_precovid$age - mean(ARDS_precovid$age)) / sd(ARDS_precovid$age)
+
+#Rerun race+age model with standardized age
+print("adjusted, race + std age")
+print(Sys.time())
+m_4b_agstd <- glmer(death_or_hospice ~ race_ethnicity + age_std +
+                   (1 | prov_id), 
+                 data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_agstd) 
+
+se_4b_agstd <- sqrt(diag(vcov(m_4b_agstd)))
+# table of estimates with 95% CI
+tab_4b_agstd <- cbind(Est = fixef(m_4b_agstd), 
+                   LL = fixef(m_4b_agstd) - 1.96 * se_4b_agstd,
+                   UL = fixef(m_4b_agstd) + 1.96 * se_4b_agstd)
+exp(tab_4b_agstd)
+
+
+
+#adjusted, std age + gender
+print("adjusted, age + gender")
+print(Sys.time())
+m_4b_ag <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
+                  (1 | prov_id), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(m_4b_ag) 
+
+se_4b_ag <- sqrt(diag(vcov(m_4b_ag)))
+# table of estimates with 95% CI
+tab_4b_ag <- cbind(Est = fixef(m_4b_ag), 
+                  LL = fixef(m_4b_ag) - 1.96 * se_4b_ag,
+                  UL = fixef(m_4b_ag) + 1.96 * se_4b_ag)
+exp(tab_4b_ag)
+
+
+#adjusted, age + gender + ins
+print("adjusted, age + gender + Ins")
+print(Sys.time())
+m_4b_1 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   (1 | prov_id), 
                 data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
@@ -1112,7 +1715,7 @@ exp(tab_4b_1)
 #adjusted + CCI
 print("adjusted + CCI")
 print(Sys.time())
-m_4b_2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4b_2 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + (1 | prov_id), 
                 data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
@@ -1128,7 +1731,7 @@ exp(tab_4b_2)
 #adjusted + CCI + organ failure
 print("adjusted + CCI + organ failure")
 print(Sys.time())
-m_4b_3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4b_3 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + organ_failure + (1 | prov_id), 
                 data = ARDS_precovid, family = binomial)
 print(Sys.time()) 
@@ -1195,10 +1798,79 @@ exp(tab_4c_3)
 
 ## table 4d, Covid, outcome death or hospice transfer -----------
 
-#adjusted
-print("adjusted")
+#unadjusted - no MLM; regular LR
+print("unadjusted")
 print(Sys.time())
-m_4d_1 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4d_glm <- glm(death_or_hospice ~ race_ethnicity, 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_glm)
+
+se_4d_glm <- sqrt(diag(vcov(m_4d_glm)))
+# table of estimates with 95% CI
+tab_4d_glm <- cbind(Est = coef(m_4d_glm), 
+                    LL = coef(m_4d_glm) - 1.96 * se_4d_glm,
+                    UL = coef(m_4d_glm) + 1.96 * se_4d_glm)
+exp(tab_4d_glm)
+
+
+#unadjusted
+print("unadjusted")
+print(Sys.time())
+m_4d_unad <- glmer(death_or_hospice ~ race_ethnicity +
+                     (1 | prov_id), 
+                   data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_unad)
+
+se_4d_unad <- sqrt(diag(vcov(m_4d_unad)))
+# table of estimates with 95% CI
+tab_4d_unad <- cbind(Est = fixef(m_4d_unad), 
+                     LL = fixef(m_4d_unad) - 1.96 * se_4d_unad,
+                     UL = fixef(m_4d_unad) + 1.96 * se_4d_unad)
+exp(tab_4d_unad)
+
+
+#Standardizing age
+ARDS_covid$age_std <- (ARDS_covid$age - mean(ARDS_covid$age)) / sd(ARDS_covid$age)
+
+#adjusted, age 
+print("adjusted, age")
+print(Sys.time())
+m_4d_a <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
+                   (1 | prov_id), 
+                 data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_a) 
+
+se_4d_a <- sqrt(diag(vcov(m_4d_a)))
+# table of estimates with 95% CI
+tab_4d_a <- cbind(Est = fixef(m_4d_a), 
+                   LL = fixef(m_4d_a) - 1.96 * se_4d_a,
+                   UL = fixef(m_4d_a) + 1.96 * se_4d_a)
+exp(tab_4d_a)
+
+#adjusted, age + gender
+print("adjusted, age + gender")
+print(Sys.time())
+m_4d_ag <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
+                   (1 | prov_id), 
+                 data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(m_4d_ag) 
+
+se_4d_ag <- sqrt(diag(vcov(m_4d_ag)))
+# table of estimates with 95% CI
+tab_4d_ag <- cbind(Est = fixef(m_4d_ag), 
+                   LL = fixef(m_4d_ag) - 1.96 * se_4d_ag,
+                   UL = fixef(m_4d_ag) + 1.96 * se_4d_ag)
+exp(tab_4d_ag)
+
+
+#adjusted, age + gender + ins
+print("adjusted, age + gender + Ins")
+print(Sys.time())
+m_4d_1 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   (1 | prov_id), 
                 data = ARDS_covid, family = binomial)
 print(Sys.time()) 
@@ -1215,7 +1887,7 @@ exp(tab_4d_1)
 #adjusted + CCI
 print("adjusted + CCI")
 print(Sys.time())
-m_4d_2 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4d_2 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + (1 | prov_id), 
                 data = ARDS_covid, family = binomial)
 print(Sys.time()) 
@@ -1231,7 +1903,7 @@ exp(tab_4d_2)
 #adjusted + CCI + organ failure
 print("adjusted + CCI + organ failure")
 print(Sys.time())
-m_4d_3 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+m_4d_3 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + organ_failure + (1 | prov_id), 
                 data = ARDS_covid, family = binomial)
 print(Sys.time()) 
@@ -1243,6 +1915,40 @@ tab_4d_3 <- cbind(Est = fixef(m_4d_3),
                   LL = fixef(m_4d_3) - 1.96 * se_4d_3,
                   UL = fixef(m_4d_3) + 1.96 * se_4d_3)
 exp(tab_4d_3)
+
+
+##Final model with admission month as random intercept (for preCOVID and COVID)
+#preCOVID - adjusted + CCI + organ failure
+print("precovid - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_precovid_time <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id) + (1 | adm_mon), 
+                data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(mod_precovid_time) 
+
+se_precovid_time <- sqrt(diag(vcov(mod_precovid_time)))
+# table of estimates with 95% CI
+tab_precovid_time <- cbind(Est = fixef(mod_precovid_time), 
+                  LL = fixef(mod_precovid_time) - 1.96 * se_precovid_time,
+                  UL = fixef(mod_precovid_time) + 1.96 * se_precovid_time)
+exp(tab_precovid_time)
+
+#COVID - adjusted + CCI + organ failure
+print("covid - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_covid_time <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id) + (1 | adm_mon), 
+                data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(mod_covid_time) 
+
+se_covid_time <- sqrt(diag(vcov(mod_covid_time)))
+# table of estimates with 95% CI
+tab_covid_time <- cbind(Est = fixef(mod_covid_time), 
+                  LL = fixef(mod_covid_time) - 1.96 * se_covid_time,
+                  UL = fixef(mod_covid_time) + 1.96 * se_covid_time)
+exp(tab_covid_time)
 
 
 
@@ -1350,6 +2056,58 @@ tab_mod_no_covid_plus <- cbind(Est = fixef(mod_no_covid_plus),
 exp(tab_mod_no_covid_plus)
 
 
+###-------FULL MODEL WITH ADJUSTING FOR COVID-19 DIAGNOSIS---------
+##### A) 2017-2021 - adjusted + CCI + organ failure + COVID
+print("adjusted + CCI + organ failure + COVID")
+print(Sys.time())
+mod_full_mod <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                        CCI + organ_failure + COVID + (1 | prov_id), 
+                      data = ARDS_data, family = binomial)
+print(Sys.time()) 
+summary(mod_full_mod) 
+
+se_mod_full_mod <- sqrt(diag(vcov(mod_full_mod)))
+# table of estimates with 95% CI
+tab_mod_full_mod <- cbind(Est = fixef(mod_full_mod), 
+                          LL = fixef(mod_full_mod) - 1.96 * se_mod_full_mod,
+                          UL = fixef(mod_full_mod) + 1.96 * se_mod_full_mod)
+exp(tab_mod_full_mod)
+
+
+##### B) PRE-COVID PERIOD - adjusted + CCI + organ failure + COVID
+print("adjusted + CCI + organ failure + COVID")
+print(Sys.time())
+mod_precovid <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                        CCI + organ_failure + COVID + (1 | prov_id), 
+                      data = ARDS_precovid, family = binomial)
+print(Sys.time()) 
+summary(mod_precovid) 
+
+se_mod_precovid <- sqrt(diag(vcov(mod_precovid)))
+# table of estimates with 95% CI
+tab_mod_precovid <- cbind(Est = fixef(mod_precovid), 
+                          LL = fixef(mod_precovid) - 1.96 * se_mod_precovid,
+                          UL = fixef(mod_precovid) + 1.96 * se_mod_precovid)
+exp(tab_mod_precovid)
+
+
+##### C) COVID PERIOD - adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure + COVID")
+print(Sys.time())
+mod_covid <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                        CCI + organ_failure + COVID + (1 | prov_id), 
+                      data = ARDS_covid, family = binomial)
+print(Sys.time()) 
+summary(mod_covid) 
+
+se_mod_covid <- sqrt(diag(vcov(mod_covid)))
+# table of estimates with 95% CI
+tab_mod_covid <- cbind(Est = fixef(mod_covid), 
+                          LL = fixef(mod_covid) - 1.96 * se_mod_covid,
+                          UL = fixef(mod_covid) + 1.96 * se_mod_covid)
+exp(tab_mod_covid)
+
+
 ####------------ASSESSING PATTERNS OVER TIME (and other)---------------------------------
 
 #MORTALITY count by month----
@@ -1438,7 +2196,128 @@ deaths_per_year_month_Other <- ARDS_data_Other %>%
 
 print(deaths_per_year_month_Other, n = Inf)
 
+###------EXPLORING MORTALITY BY YEAR----------------------
+data_2017 <- c(2017101, 2017102, 2017103, 2017204, 2017205, 2017206, 
+               2017307, 2017308, 2017309, 2017410, 2017411, 2017412)
 
+data_2018 <- c(2018101, 2018102, 2018103, 2018204, 2018205, 2018206, 
+               2018307, 2018308, 2018309, 2018410, 2018411, 2018412)
+
+data_2019 <- c(2019101, 2019102, 2019103, 2019204, 2019205, 2019206, 
+               2019307, 2019308, 2019309, 2019410, 2019411, 2019412)
+              
+data_2020 <- c(2020101, 2020102, 2020103, 2020204, 2020205, 2020206, 
+               2020307, 2020308, 2020309, 2020410, 2020411, 2020412)
+        
+data_2021 <- c(2021103, 2021204, 2021102, 2021101, 2021205, 2021206, 
+               2021307, 2021308, 2021309)
+
+# split ARDS into datasets by year
+ARDS_2017 <- ARDS_data %>%
+  filter(adm_mon %in% data_2017)
+
+ARDS_2018 <- ARDS_data %>%
+  filter(adm_mon %in% data_2018)
+
+ARDS_2019 <- ARDS_data %>%
+  filter(adm_mon %in% data_2019)
+
+ARDS_2020 <- ARDS_data %>%
+  filter(adm_mon %in% data_2020)
+
+ARDS_2021 <- ARDS_data %>%
+  filter(adm_mon %in% data_2021)
+
+# sample size
+dim(ARDS_2017)
+dim(ARDS_2018)
+dim(ARDS_2019)
+dim(ARDS_2020)
+dim(ARDS_2021)
+
+##2017
+print("2017 - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_2017 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                             CCI + organ_failure + (1 | prov_id), 
+                           data = ARDS_2017, family = binomial)
+print(Sys.time()) 
+summary(mod_2017) 
+
+se_mod_2017 <- sqrt(diag(vcov(mod_2017)))
+# table of estimates with 95% CI
+tab_mod_2017 <- cbind(Est = fixef(mod_2017), 
+                               LL = fixef(mod_2017) - 1.96 * se_mod_2017,
+                               UL = fixef(mod_2017) + 1.96 * se_mod_2017)
+exp(tab_mod_2017)
+
+
+##2018
+print("2018 - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_2018 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_2018, family = binomial)
+print(Sys.time()) 
+summary(mod_2018) 
+
+se_mod_2018 <- sqrt(diag(vcov(mod_2018)))
+# table of estimates with 95% CI
+tab_mod_2018 <- cbind(Est = fixef(mod_2018), 
+                      LL = fixef(mod_2018) - 1.96 * se_mod_2018,
+                      UL = fixef(mod_2018) + 1.96 * se_mod_2018)
+exp(tab_mod_2018)
+
+
+##2019
+print("2019 - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_2019 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_2019, family = binomial)
+print(Sys.time()) 
+summary(mod_2019) 
+
+se_mod_2019 <- sqrt(diag(vcov(mod_2019)))
+# table of estimates with 95% CI
+tab_mod_2019 <- cbind(Est = fixef(mod_2019), 
+                      LL = fixef(mod_2019) - 1.96 * se_mod_2019,
+                      UL = fixef(mod_2019) + 1.96 * se_mod_2019)
+exp(tab_mod_2019)
+
+
+##2020
+print("2020 - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_2020 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_2020, family = binomial)
+print(Sys.time()) 
+summary(mod_2020) 
+
+se_mod_2020 <- sqrt(diag(vcov(mod_2020)))
+# table of estimates with 95% CI
+tab_mod_2020 <- cbind(Est = fixef(mod_2020), 
+                      LL = fixef(mod_2020) - 1.96 * se_mod_2020,
+                      UL = fixef(mod_2020) + 1.96 * se_mod_2020)
+exp(tab_mod_2020)
+
+
+##2021
+print("2021 - adjusted + CCI + organ failure")
+print(Sys.time())
+mod_2021 <- glmer(death_or_hospice ~ race_ethnicity + age + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_2021, family = binomial)
+print(Sys.time()) 
+summary(mod_2021) 
+
+se_mod_2021 <- sqrt(diag(vcov(mod_2021)))
+# table of estimates with 95% CI
+tab_mod_2021 <- cbind(Est = fixef(mod_2021), 
+                      LL = fixef(mod_2021) - 1.96 * se_mod_2021,
+                      UL = fixef(mod_2021) + 1.96 * se_mod_2021)
+exp(tab_mod_2021)
 
 ###---------MLM with fixed effect of time----------------
 ##### adjusted + CCI + organ failure
