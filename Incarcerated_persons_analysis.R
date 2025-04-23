@@ -398,7 +398,7 @@ RF_data_complete <- RF_data_complete %>%
 
 
 
-###-----------Managing Admission Month ----------------
+###START HERE!!!! -----------Managing Admission Month ----------------
 ##Looking at distribution of admission month
 table(RF_data_complete$adm_mon)
 
@@ -429,6 +429,42 @@ deaths_per_year_month <- RF_data_complete %>%
   arrange(year, month)
 
 print(deaths_per_year_month, n = Inf)
+
+
+#Stratifying by Prisoner (n=2,739) and non-prisoner (n=2,211,943)
+##Prisoner dataset
+RF_data_complete_pris <- RF_data_complete %>%
+  filter(D_prisoner == 1)
+
+##Non-prisoner dataset
+RF_data_complete_nopris <- RF_data_complete %>%
+  filter(D_prisoner == 0)
+
+#Mortality (death) count by month --> Stratified by prisoner vs not
+##Prisoner
+table(RF_data_complete_pris$year)
+table(RF_data_complete_pris$year, RF_data_complete_pris$month)
+
+deaths_per_year_month_pris <- RF_data_complete_pris %>%                
+  filter(death == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_pris, n = Inf)
+
+
+##Non-Prisoner
+table(RF_data_complete_nopris$year)
+table(RF_data_complete_nopris$year, RF_data_complete_nopris$month)
+
+deaths_per_year_month_nopris <- RF_data_complete_nopris %>%                
+  filter(death == 1) %>%
+  group_by(year, month) %>%             
+  summarise(num_deaths = n(), .groups = "drop") %>%               
+  arrange(year, month)
+
+print(deaths_per_year_month_nopris, n = Inf)
 
 
 

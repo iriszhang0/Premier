@@ -1,3 +1,6 @@
+###Setting working directory to shared folder in AWS
+setwd("Y:\export_2025-01-08-193652")
+
 # load and merge data ----------------------
 setwd("/scratch/Premier/Raw_Data")
 
@@ -22,6 +25,13 @@ print(Sys.time())
 load(file = "nyu_allyears_diagnosis.RData")
 print(Sys.time())
 
+
+##For AWS
+#print("loading .... diagnosis")
+#print(Sys.time())
+#load(file = "_paticd_diag/nyu_allyears_diagnosis.RData")
+#print(Sys.time())
+
 print("merging")
 merged_data <- left_join(demo, data, by = "pat_key")
 print(Sys.time())
@@ -32,6 +42,12 @@ setwd("/scratch/Premier/Raw_Data/_pataprdrg")
 print(Sys.time())
 load(file = "nyu_allyears_aprdrg.RData")
 print(Sys.time())
+
+#For AWS
+#print("loading .... aprdrg")
+#print(Sys.time())
+#load(file = "_pataprdrg/nyu_allyears_aprdrg.RData")
+#print(Sys.time())
 
 print("merging")
 merged_data <- left_join(merged_data, all_aprdrg, by = "pat_key")
@@ -1665,7 +1681,9 @@ print("adjusted, race + std age")
 print(Sys.time())
 m_4b_agstd <- glmer(death_or_hospice ~ race_ethnicity + age_std +
                    (1 | prov_id), 
-                 data = ARDS_precovid, family = binomial)
+                 data = ARDS_precovid, family = binomial,
+                 control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4b_agstd) 
 
@@ -1683,7 +1701,9 @@ print("adjusted, age + gender")
 print(Sys.time())
 m_4b_ag <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
                   (1 | prov_id), 
-                data = ARDS_precovid, family = binomial)
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4b_ag) 
 
@@ -1700,7 +1720,9 @@ print("adjusted, age + gender + Ins")
 print(Sys.time())
 m_4b_1 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   (1 | prov_id), 
-                data = ARDS_precovid, family = binomial)
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4b_1) #2 mins
 
@@ -1717,7 +1739,9 @@ print("adjusted + CCI")
 print(Sys.time())
 m_4b_2 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + (1 | prov_id), 
-                data = ARDS_precovid, family = binomial)
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+                )
 print(Sys.time()) 
 summary(m_4b_2) 
 
@@ -1733,7 +1757,9 @@ print("adjusted + CCI + organ failure")
 print(Sys.time())
 m_4b_3 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + organ_failure + (1 | prov_id), 
-                data = ARDS_precovid, family = binomial)
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+                )
 print(Sys.time()) 
 summary(m_4b_3) 
 
@@ -1837,9 +1863,11 @@ ARDS_covid$age_std <- (ARDS_covid$age - mean(ARDS_covid$age)) / sd(ARDS_covid$ag
 #adjusted, age 
 print("adjusted, age")
 print(Sys.time())
-m_4d_a <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
+m_4d_a <- glmer(death_or_hospice ~ race_ethnicity + age_std +
                    (1 | prov_id), 
-                 data = ARDS_covid, family = binomial)
+                 data = ARDS_covid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_a) 
 
@@ -1855,7 +1883,9 @@ print("adjusted, age + gender")
 print(Sys.time())
 m_4d_ag <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender +
                    (1 | prov_id), 
-                 data = ARDS_covid, family = binomial)
+                 data = ARDS_covid, family = binomial,
+                 control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_ag) 
 
@@ -1872,7 +1902,9 @@ print("adjusted, age + gender + Ins")
 print(Sys.time())
 m_4d_1 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   (1 | prov_id), 
-                data = ARDS_covid, family = binomial)
+                data = ARDS_covid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_1) #2 mins
 
@@ -1889,7 +1921,9 @@ print("adjusted + CCI")
 print(Sys.time())
 m_4d_2 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + (1 | prov_id), 
-                data = ARDS_covid, family = binomial)
+                data = ARDS_covid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_2) 
 
@@ -1905,7 +1939,9 @@ print("adjusted + CCI + organ failure")
 print(Sys.time())
 m_4d_3 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
                   CCI + organ_failure + (1 | prov_id), 
-                data = ARDS_covid, family = binomial)
+                data = ARDS_covid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_3) 
 
