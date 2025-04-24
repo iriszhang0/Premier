@@ -1644,7 +1644,9 @@ print("unadjusted")
 print(Sys.time())
 m_4b_unad <- glmer(death_or_hospice ~ race_ethnicity +
                   (1 | prov_id), 
-                data = ARDS_precovid, family = binomial)
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4b_unad)
 
@@ -1845,7 +1847,9 @@ print("unadjusted")
 print(Sys.time())
 m_4d_unad <- glmer(death_or_hospice ~ race_ethnicity +
                      (1 | prov_id), 
-                   data = ARDS_covid, family = binomial)
+                   data = ARDS_covid, family = binomial,
+                   control = glmerControl(optimizer = "bobyqa")
+)
 print(Sys.time()) 
 summary(m_4d_unad)
 
