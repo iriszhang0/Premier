@@ -1803,6 +1803,92 @@ exp(tab_4b_3)
 performance::icc(m_4b_3)
 
 
+# ---------------- PRECOVID FULL MODEL WITH DIFFERENT REFERENCE GROUPS FOR RACE/ETHNICITY -----------------
+##1) Relevel race_ethnicity to change reference group
+ARDS_precovid$race_ethnicityB <- relevel(ARDS_precovid$race_ethnicity, ref = "nonHispanic_Black")
+#Rerun model with Black as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4b_Bl <- glmer(death_or_hospice ~ race_ethnicityB + age_std + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4b_Bl) 
+
+se_4b_Bl <- sqrt(diag(vcov(m_4b_Bl)))
+# table of estimates with 95% CI
+tab_4b_Bl <- cbind(Est = fixef(m_4b_Bl), 
+                  LL = fixef(m_4b_Bl) - 1.96 * se_4b_Bl,
+                  UL = fixef(m_4b_Bl) + 1.96 * se_4b_Bl)
+exp(tab_4b_Bl)
+
+
+##2) Relevel race_ethnicity to change reference group
+ARDS_precovid$race_ethnicityH <- relevel(ARDS_precovid$race_ethnicity, ref = "Hispanic")
+#Rerun model with Black as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4b_His <- glmer(death_or_hospice ~ race_ethnicityH + age_std + gender + insurance +
+                   CCI + organ_failure + (1 | prov_id), 
+                 data = ARDS_precovid, family = binomial,
+                 control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4b_His) 
+
+se_4b_His <- sqrt(diag(vcov(m_4b_His)))
+# table of estimates with 95% CI
+tab_4b_His <- cbind(Est = fixef(m_4b_His), 
+                   LL = fixef(m_4b_His) - 1.96 * se_4b_His,
+                   UL = fixef(m_4b_His) + 1.96 * se_4b_His)
+exp(tab_4b_His)
+
+
+##3) Relevel race_ethnicity to change reference group
+ARDS_precovid$race_ethnicityA <- relevel(ARDS_precovid$race_ethnicity, ref = "Asian")
+#Rerun model with Black as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4b_Asi <- glmer(death_or_hospice ~ race_ethnicityA + age_std + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_precovid, family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4b_Asi) 
+
+se_4b_Asi <- sqrt(diag(vcov(m_4b_Asi)))
+# table of estimates with 95% CI
+tab_4b_Asi <- cbind(Est = fixef(m_4b_Asi), 
+                    LL = fixef(m_4b_Asi) - 1.96 * se_4b_Asi,
+                    UL = fixef(m_4b_Asi) + 1.96 * se_4b_Asi)
+exp(tab_4b_Asi)
+
+
+##4) Relevel race_ethnicity to change reference group
+ARDS_precovid$race_ethnicityO <- relevel(ARDS_precovid$race_ethnicity, ref = "Other")
+#Rerun model with Black as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4b_Oth <- glmer(death_or_hospice ~ race_ethnicityO + age_std + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_precovid, family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4b_Oth) 
+
+se_4b_Oth <- sqrt(diag(vcov(m_4b_Oth)))
+# table of estimates with 95% CI
+tab_4b_Oth <- cbind(Est = fixef(m_4b_Oth), 
+                    LL = fixef(m_4b_Oth) - 1.96 * se_4b_Oth,
+                    UL = fixef(m_4b_Oth) + 1.96 * se_4b_Oth)
+exp(tab_4b_Oth)
+
+
+
 ## PRECOVID with in-hospital mortality---------------------
 #adjusted + CCI + organ failure
 print("adjusted + CCI + organ failure")
@@ -2038,6 +2124,93 @@ tab_4d_3 <- cbind(Est = fixef(m_4d_3),
 exp(tab_4d_3)
 
 performance::icc(m_4d_3)
+
+
+# ---------------- PRECOVID FULL MODEL WITH DIFFERENT REFERENCE GROUPS FOR RACE/ETHNICITY -----------------
+##1) Relevel race_ethnicity to change reference group
+ARDS_covid$race_ethnicityB <- relevel(ARDS_covid$race_ethnicity, ref = "nonHispanic_Black")
+#Rerun model with Black as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4d_Bl <- glmer(death_or_hospice ~ race_ethnicityB + age_std + gender + insurance +
+                   CCI + organ_failure + (1 | prov_id), 
+                 data = ARDS_covid, family = binomial,
+                 control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4d_Bl) 
+
+se_4d_Bl <- sqrt(diag(vcov(m_4d_Bl)))
+# table of estimates with 95% CI
+tab_4d_Bl <- cbind(Est = fixef(m_4d_Bl), 
+                   LL = fixef(m_4d_Bl) - 1.96 * se_4d_Bl,
+                   UL = fixef(m_4d_Bl) + 1.96 * se_4d_Bl)
+exp(tab_4d_Bl)
+
+
+##2) Relevel race_ethnicity to change reference group
+ARDS_covid$race_ethnicityH <- relevel(ARDS_covid$race_ethnicity, ref = "Hispanic")
+#Rerun model with Hispanic as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4d_His <- glmer(death_or_hospice ~ race_ethnicityH + age_std + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_covid, family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4d_His) 
+
+se_4d_His <- sqrt(diag(vcov(m_4d_His)))
+# table of estimates with 95% CI
+tab_4d_His <- cbind(Est = fixef(m_4d_His), 
+                    LL = fixef(m_4d_His) - 1.96 * se_4d_His,
+                    UL = fixef(m_4d_His) + 1.96 * se_4d_His)
+exp(tab_4d_His)
+
+
+##3) Relevel race_ethnicity to change reference group
+ARDS_covid$race_ethnicityA <- relevel(ARDS_covid$race_ethnicity, ref = "Asian")
+#Rerun model with Asian as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4d_Asi <- glmer(death_or_hospice ~ race_ethnicityA + age_std + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_covid, family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4d_Asi) 
+
+se_4d_Asi <- sqrt(diag(vcov(m_4d_Asi)))
+# table of estimates with 95% CI
+tab_4d_Asi <- cbind(Est = fixef(m_4d_Asi), 
+                    LL = fixef(m_4d_Asi) - 1.96 * se_4d_Asi,
+                    UL = fixef(m_4d_Asi) + 1.96 * se_4d_Asi)
+exp(tab_4d_Asi)
+
+
+##4) Relevel race_ethnicity to change reference group
+ARDS_covid$race_ethnicityO <- relevel(ARDS_covid$race_ethnicity, ref = "Other")
+#Rerun model with Other as ref group
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+m_4d_Oth <- glmer(death_or_hospice ~ race_ethnicityO + age_std + gender + insurance +
+                    CCI + organ_failure + (1 | prov_id), 
+                  data = ARDS_covid, family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4d_Oth) 
+
+se_4d_Oth <- sqrt(diag(vcov(m_4d_Oth)))
+# table of estimates with 95% CI
+tab_4d_Oth <- cbind(Est = fixef(m_4d_Oth), 
+                    LL = fixef(m_4d_Oth) - 1.96 * se_4d_Oth,
+                    UL = fixef(m_4d_Oth) + 1.96 * se_4d_Oth)
+exp(tab_4d_Oth)
+
+
 
 
 ## COVID with in-hospital mortality---------------------
