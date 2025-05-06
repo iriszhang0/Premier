@@ -1657,6 +1657,8 @@ tab_4b_unad <- cbind(Est = fixef(m_4b_unad),
                   UL = fixef(m_4b_unad) + 1.96 * se_4b_unad)
 exp(tab_4b_unad)
 
+performance::icc(m_4b_unad)
+
 
 #adjusted, age
 print("adjusted, race + age")
@@ -1735,6 +1737,8 @@ tab_4b_1 <- cbind(Est = fixef(m_4b_1),
                   UL = fixef(m_4b_1) + 1.96 * se_4b_1)
 exp(tab_4b_1)
 
+performance::icc(m_4b_1)
+
 
 #adjusted + CCI
 print("adjusted + CCI")
@@ -1754,6 +1758,30 @@ tab_4b_2 <- cbind(Est = fixef(m_4b_2),
                   UL = fixef(m_4b_2) + 1.96 * se_4b_2)
 exp(tab_4b_2)
 
+performance::icc(m_4b_2)
+
+
+#adjusted + OF
+print("adjusted + OF")
+print(Sys.time())
+m_4b_2.5 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
+                  organ_failure + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4b_2.5) 
+
+se_4b_2.5 <- sqrt(diag(vcov(m_4b_2.5)))
+# table of estimates with 95% CI
+tab_4b_2.5 <- cbind(Est = fixef(m_4b_2.5), 
+                  LL = fixef(m_4b_2.5) - 1.96 * se_4b_2.5,
+                  UL = fixef(m_4b_2.5) + 1.96 * se_4b_2.5)
+exp(tab_4b_2.5)
+
+performance::icc(m_4b_2.5)
+
+
 #adjusted + CCI + organ failure
 print("adjusted + CCI + organ failure")
 print(Sys.time())
@@ -1771,6 +1799,31 @@ tab_4b_3 <- cbind(Est = fixef(m_4b_3),
                   LL = fixef(m_4b_3) - 1.96 * se_4b_3,
                   UL = fixef(m_4b_3) + 1.96 * se_4b_3)
 exp(tab_4b_3)
+
+performance::icc(m_4b_3)
+
+
+## PRECOVID with in-hospital mortality---------------------
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_pre_hosp <- glmer(inhospital_death ~ race_ethnicity + age_std + gender + insurance +
+                  CCI + organ_failure + (1 | prov_id), 
+                data = ARDS_precovid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(mod_pre_hosp) 
+
+se_pre_hosp <- sqrt(diag(vcov(mod_pre_hosp)))
+# table of estimates with 95% CI
+tab_pre_hosp <- cbind(Est = fixef(mod_pre_hosp), 
+                  LL = fixef(mod_pre_hosp) - 1.96 * se_pre_hosp,
+                  UL = fixef(mod_pre_hosp) + 1.96 * se_pre_hosp)
+exp(tab_pre_hosp)
+
+performance::icc(mod_pre_hosp)
+
 
 
 ## table 4c, Covid, outcome death -----------
@@ -1860,6 +1913,8 @@ tab_4d_unad <- cbind(Est = fixef(m_4d_unad),
                      UL = fixef(m_4d_unad) + 1.96 * se_4d_unad)
 exp(tab_4d_unad)
 
+performance::icc(m_4d_unad)
+
 
 #Standardizing age
 ARDS_covid$age_std <- (ARDS_covid$age - mean(ARDS_covid$age)) / sd(ARDS_covid$age)
@@ -1919,6 +1974,8 @@ tab_4d_1 <- cbind(Est = fixef(m_4d_1),
                   UL = fixef(m_4d_1) + 1.96 * se_4d_1)
 exp(tab_4d_1)
 
+performance::icc(m_4d_1)
+
 
 #adjusted + CCI
 print("adjusted + CCI")
@@ -1938,6 +1995,30 @@ tab_4d_2 <- cbind(Est = fixef(m_4d_2),
                   UL = fixef(m_4d_2) + 1.96 * se_4d_2)
 exp(tab_4d_2)
 
+performance::icc(m_4d_2)
+
+
+#adjusted + OF
+print("adjusted + OF")
+print(Sys.time())
+m_4d_2.5 <- glmer(death_or_hospice ~ race_ethnicity + age_std + gender + insurance +
+                  organ_failure + (1 | prov_id), 
+                data = ARDS_covid, family = binomial,
+                control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(m_4d_2.5) 
+
+se_4d_2.5 <- sqrt(diag(vcov(m_4d_2.5)))
+# table of estimates with 95% CI
+tab_4d_2.5 <- cbind(Est = fixef(m_4d_2.5), 
+                  LL = fixef(m_4d_2.5) - 1.96 * se_4d_2.5,
+                  UL = fixef(m_4d_2.5) + 1.96 * se_4d_2.5)
+exp(tab_4d_2.5)
+
+performance::icc(m_4d_2.5)
+
+
 #adjusted + CCI + organ failure
 print("adjusted + CCI + organ failure")
 print(Sys.time())
@@ -1955,6 +2036,31 @@ tab_4d_3 <- cbind(Est = fixef(m_4d_3),
                   LL = fixef(m_4d_3) - 1.96 * se_4d_3,
                   UL = fixef(m_4d_3) + 1.96 * se_4d_3)
 exp(tab_4d_3)
+
+performance::icc(m_4d_3)
+
+
+## COVID with in-hospital mortality---------------------
+#adjusted + CCI + organ failure
+print("adjusted + CCI + organ failure")
+print(Sys.time())
+mod_cov_hosp <- glmer(inhospital_death ~ race_ethnicity + age_std + gender + insurance +
+                        CCI + organ_failure + (1 | prov_id), 
+                      data = ARDS_covid, family = binomial,
+                      control = glmerControl(optimizer = "bobyqa")
+)
+print(Sys.time()) 
+summary(mod_cov_hosp) 
+
+se_cov_hosp <- sqrt(diag(vcov(mod_cov_hosp)))
+# table of estimates with 95% CI
+tab_cov_hosp <- cbind(Est = fixef(mod_cov_hosp), 
+                      LL = fixef(mod_cov_hosp) - 1.96 * se_cov_hosp,
+                      UL = fixef(mod_cov_hosp) + 1.96 * se_cov_hosp)
+exp(tab_cov_hosp)
+
+performance::icc(mod_cov_hosp)
+
 
 
 ##Final model with admission month as random intercept (for preCOVID and COVID)
